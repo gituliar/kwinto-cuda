@@ -1,0 +1,53 @@
+﻿{
+  "configurations": [
+    {
+      "name": "win10-debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": ["msvc_x64_x64"],
+      "buildRoot": "${projectDir}\\out\\${name}",
+      "installRoot": "${projectDir}\\bin\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
+    },
+    {
+      "name": "win10-release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\${name}",
+      "installRoot": "${projectDir}\\bin\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": ["msvc_x64_x64"]
+    },
+    {
+      "name": "linux-debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\${name}",
+      "installRoot": "${projectDir}\\bin\\${name}",
+      "cmakeExecutable": "cmake",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": ["linux_x64"],
+      "wslPath": "${defaultWSLPath}"
+    },
+    {
+      "name": "linux-release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\${name}",
+      "installRoot": "${projectDir}\\bin\\${name}",
+      "cmakeExecutable": "cmake",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": ["linux_x64"],
+      "wslPath": "${defaultWSLPath}",
+      "variables": []
+    }
+  ]
+}
