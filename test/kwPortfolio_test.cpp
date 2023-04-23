@@ -32,7 +32,7 @@ protected:
         m_config.tDim = 2048;
         m_config.xDim = 2048;
 
-        std::filesystem::path srcPath = "C:\\Users\\Sasha\\Sources\\kwinto-cuda\\portfolio.csv";
+        std::filesystem::path srcPath = std::filesystem::absolute("test/portfolio.csv");
         std::ifstream src(srcPath);
         if (!src.is_open())
         {

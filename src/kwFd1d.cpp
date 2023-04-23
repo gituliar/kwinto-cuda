@@ -295,7 +295,7 @@ kw::Fd1d_Gpu<Real>::allocate(const Fd1dConfig& config)
 
 
     if (auto status = cusparseCreate(&m_cusparseHandle); status != CUSPARSE_STATUS_SUCCESS)
-        return "kw::Fd1d_Gpu::allocate: cuSparse error " + status;
+        return "kw::Fd1d_Gpu::allocate: cuSparse error " + std::to_string(status);
 
     m_cusparseBufSize = 512 * 1024;
     if (auto cuErr = cudaMalloc((void**)&m_cusparseBuf, m_cusparseBufSize); cuErr != cudaSuccess)
@@ -312,7 +312,7 @@ kw::Error
 kw::Fd1d_Gpu<Real>::free()
 {
     if (auto status = cusparseDestroy(m_cusparseHandle); status != CUSPARSE_STATUS_SUCCESS)
-        return "kw::Fd1d_Gpu::allocate: cuSparse error " + status;
+        return "kw::Fd1d_Gpu::allocate: cuSparse error " + std::to_string(status);
 
     m__v.free();
     m__x.free();
@@ -463,14 +463,14 @@ kw::Fd1d_Gpu<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
             else
                 static_assert(true, "type not supported");
             if (status != CUSPARSE_STATUS_SUCCESS)
-                return "kw::Fd1d_Gpu::solve: cuSparse error " + status;
+                return "kw::Fd1d_Gpu::solve: cuSparse error " + std::to_string(status);
 
             if (bufSize > m_cusparseBufSize)
             {
                 cudaFree(m_cusparseBuf);
 
                 m_cusparseBufSize = bufSize;
-                if (auto cuErr = cudaMalloc((void**)&m_cusparseBuf, m_cusparseBufSize); cuErr != CUDA_SUCCESS)
+                if (auto cuErr = cudaMalloc((void**)&m_cusparseBuf, m_cusparseBufSize); cuErr != cudaSuccess)
                     return "kw::Fd1d_Gpu::solve: " + fromCudaError(cuErr);
             }
         }
@@ -506,7 +506,7 @@ kw::Fd1d_Gpu<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
         else
             static_assert(true, "type not supported");
         if (status != CUSPARSE_STATUS_SUCCESS)
-            return "kw::Fd1d_Gpu::solve: cuSparse error " + status;
+            return "kw::Fd1d_Gpu::solve: cuSparse error " + std::to_string(status);
 
         // Step 2b
         //   - Swap V & W

@@ -73,7 +73,11 @@ int main(int argc, char** argv)
 
         {
             kw::Fd1d<float> pricer;
-            pricer.allocate(config);
+            if (auto error = pricer.allocate(config); !error.empty())
+            {
+                std::cerr << error << std::endl;
+                return 1;
+            }
 
             std::vector<kw::Fd1dPde<float>> pdes;
             kw::Fd1dPdeFor(assets, config, pdes);
@@ -84,7 +88,7 @@ int main(int argc, char** argv)
 
                 if (auto error = pricer.solve(pdes); !error.empty())
                 {
-                    std::cerr << error;
+                    std::cerr << error << std::endl;
                     return 1;
                 }
 
@@ -97,7 +101,11 @@ int main(int argc, char** argv)
 
         {
             kw::Fd1d_Gpu<float> pricer;
-            pricer.allocate(config);
+            if (auto error = pricer.allocate(config); !error.empty())
+            {
+                std::cerr << error << std::endl;
+                return 1;
+            }
 
             std::vector<kw::Fd1dPde<float>> pdes;
             kw::Fd1dPdeFor(assets, config, pdes);
@@ -108,7 +116,7 @@ int main(int argc, char** argv)
 
                 if (auto error = pricer.solve(pdes); !error.empty())
                 {
-                    std::cerr << error;
+                    std::cerr << error << std::endl;
                     return 1;
                 }
 
@@ -142,7 +150,11 @@ int main(int argc, char** argv)
 
         {
             kw::Fd1d<double> pricer;
-            pricer.allocate(config);
+            if (auto error = pricer.allocate(config); !error.empty())
+            {
+                std::cerr << error << std::endl;
+                return 1;
+            }
 
             std::vector<kw::Fd1dPde<double>> pdes;
             kw::Fd1dPdeFor(assets, config, pdes);
@@ -154,7 +166,7 @@ int main(int argc, char** argv)
 
                 if (auto error = pricer.solve(pdes); !error.empty())
                 {
-                    std::cerr << error;
+                    std::cerr << error << std::endl;
                     return 1;
                 }
 
@@ -167,7 +179,11 @@ int main(int argc, char** argv)
 
         {
             kw::Fd1d_Gpu<double> pricer;
-            pricer.allocate(config);
+            if (auto error = pricer.allocate(config); !error.empty())
+            {
+                std::cerr << error << std::endl;
+                return 1;
+            }
 
             std::vector<kw::Fd1dPde<double>> pdes;
             kw::Fd1dPdeFor(assets, config, pdes);
@@ -179,7 +195,7 @@ int main(int argc, char** argv)
 
                 if (auto error = pricer.solve(pdes); !error.empty())
                 {
-                    std::cerr << error;
+                    std::cerr << error << std::endl;
                     return 1;
                 }
 
