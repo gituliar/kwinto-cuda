@@ -13,15 +13,15 @@ template<typename Real>
 struct Option
 {
     Real
-        t; // time to maturity
+        t; // time to maturity (1.0 means 1 year)
     Real
-        k; // strike
+        k; // strike (100 means $100)
     Real
-        z; // volatility
+        z; // volatility (0.2 means 20% per year)
     Real
-        r; // interest rate
+        r; // interest rate (0.05 means 5% per year)
     Real
-        q; // dividend rate
+        q; // dividend rate (0.03 means 3% per year)
     bool
         e; // early exercise
     kParity
@@ -37,7 +37,7 @@ struct Option
 template<typename Real>
 std::ostream& operator<<(std::ostream& os, const Option<Real>& o) {
     return os << "<Option t=" << o.t << ", k=" << o.k << ", z=" << o.z << ", r=" << o.r << ", q=" << o.q
-        << ", " << (o.e ? "amer" : "euro") << ", " << (o.w == kParity::Call ? "call" : "p") << ">";
+        << ", " << (o.e ? "amer" : "euro") << ", " << (o.w == kParity::Call ? "call" : "put") << ">";
 }
 
 }

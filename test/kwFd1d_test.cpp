@@ -5,7 +5,7 @@
 
 using real = double;
 
-class kwAmericanTest : public testing::Test {
+class kwFd1dTest : public testing::Test {
 protected:
     void
         SetUp() override
@@ -34,7 +34,7 @@ protected:
 };
 
 
-TEST_F(kwAmericanTest, Fd1d)
+TEST_F(kwFd1dTest, Cpu)
 {
     std::vector<kw::Option<real>> assets;
     for (const auto& test : m_testData)
@@ -65,7 +65,7 @@ TEST_F(kwAmericanTest, Fd1d)
 }
 
 
-TEST_F(kwAmericanTest, Fd1d_GPU)
+TEST_F(kwFd1dTest, Gpu)
 {
     std::vector<kw::Option<real>> assets;
     for (const auto& test : m_testData)

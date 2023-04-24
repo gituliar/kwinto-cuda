@@ -1,0 +1,5 @@
+.*.swp
+.vs
+bin
+out
+src/kwVersion.cpp

@@ -32,7 +32,7 @@ protected:
         m_config.tDim = 2048;
         m_config.xDim = 2048;
 
-        std::filesystem::path srcPath = std::filesystem::absolute("test/portfolio.csv");
+        const auto srcPath = std::filesystem::absolute("test/portfolio.csv");
         std::ifstream src(srcPath);
         if (!src.is_open())
         {
@@ -109,7 +109,7 @@ protected:
         m_testData;
 };
 
-TEST_F(kwPortfolioTest, Fd1d)
+TEST_F(kwPortfolioTest, Fd1dCpu)
 {
     ASSERT_EQ(m_testData.size(), 4200);
     std::vector<kw::Option<real>> assets;
