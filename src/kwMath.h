@@ -4,7 +4,7 @@
 #include <numbers>
 #include <vector>
 
-#include "kwArray.h"
+#include "kwString.h"
 
 
 namespace kw

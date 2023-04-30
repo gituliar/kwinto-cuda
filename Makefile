@@ -17,4 +17,6 @@ install-test:
 
 
 check:
+	./out/linux-release/test/kwinto_test --gtest_filter=-kwPortfolioTest.*
+check-all:
 	./out/linux-release/test/kwinto_test

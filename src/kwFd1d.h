@@ -18,9 +18,11 @@ struct Fd1dPde
         k;
     // const (for now)
     Real
+        q;
+    Real
         r;
     Real
-        q;
+        s;
     Real
         t;
     Real
@@ -65,7 +67,7 @@ struct Fd1dConfig
 template<typename Real>
 Error
 Fd1dPdeFor(
-    const std::vector<Option<Real>>& assets,
+    const std::vector<Option>& assets,
     const Fd1dConfig& config,
     std::vector<Fd1dPde<Real>>& pdes)
 {
@@ -77,8 +79,9 @@ Fd1dPdeFor(
         auto& pde = pdes.emplace_back();
 
         pde.k = asset.k;
-        pde.r = asset.r;
         pde.q = asset.q;
+        pde.r = asset.r;
+        pde.s = asset.s;
         pde.t = asset.t;
         pde.z = asset.z;
 

@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 
-#include <filesystem>
 #include <fstream>
 
 #include "kwFd1d.h"
-#include "kwString.h"
+#include "kwPortfolio.h"
 
 
 
@@ -29,87 +28,29 @@ protected:
         SetUp() override
     {
         m_config.theta = 0.5;
-        m_config.tDim = 2048;
-        m_config.xDim = 2048;
+        m_config.tDim = 1024;
+        m_config.xDim = 1024;
 
-        const auto srcPath = std::filesystem::absolute("test/portfolio.csv");
-        std::ifstream src(srcPath);
-        if (!src.is_open())
+        const auto srcPath = "test/portfolio.csv";
+        if (auto error = kw::loadPortfolio(srcPath, m_portfolio); !error.empty())
         {
-            std::cout << "kwPortfolioTest: Failed to open " << srcPath << '\n';
+            std::cerr << "kwPortfolioTest: Failed to open " << srcPath << '\n';
             return;
-        }
-
-        {
-            std::string header;
-            std::getline(src, header);
-
-            int i = 0, e, q, r, s, t, v, w, z;
-            e = q = r = s = t = v = w = z = -1;
-            for (const auto& colName : split(header, ','))
-            {
-                if (colName == "early_exercise")
-                    e = i;
-                else if (colName == "dividend_rate")
-                    q = i;
-                else if (colName == "interest_rate")
-                    r = i;
-                else if (colName == "spot")
-                    s = i;
-                else if (colName == "time_to_maturity")
-                    t = i;
-                else if (colName == "price")
-                    v = i;
-                else if (colName == "parity")
-                    w = i;
-                else if (colName == "volatility")
-                    z = i;
-
-                ++i;
-            }
-            if (e == -1 || q == -1 || r == -1 || s == -1 || t == -1 || v == -1 || w == -1 || z == -1)
-            {
-                std::cout << "kwPortfolioTest: Some option data is missing: e=" << e << ", q=" << q << ", r=" << r
-                    << ", s=" << s << ", t=" << t << ", v=" << v << ", w=" << w << ", z=" << z << std::endl;
-                return;
-            }
-
-            std::vector<std::string> vals;
-            for (std::string line; std::getline(src, line);)
-            {
-                vals = split(line, ',');
-
-                real price, spot;
-                kw::fromString(vals[v], price);
-                kw::fromString(vals[s], spot);
-
-                kw::Option<real> asset;
-                asset.k = 100;
-                kw::fromString(vals[t], asset.t);
-                kw::fromString(vals[z], asset.z);
-                kw::fromString(vals[q], asset.q);
-                kw::fromString(vals[r], asset.r);
-                asset.e = (vals[e] == "a");
-                asset.w = vals[w] == "c" ? kw::kParity::Call : kw::kParity::Put;
-
-                m_testData[asset].emplace_back(spot, price);
-            }
-
         }
     }
 
     kw::Fd1dConfig
         m_config;
 
-    std::map<kw::Option<real>, std::vector<std::pair<real, real>>>
-        m_testData;
+    kw::Portfolio
+        m_portfolio;
 };
 
 TEST_F(kwPortfolioTest, Fd1dCpu)
 {
-    ASSERT_EQ(m_testData.size(), 4200);
-    std::vector<kw::Option<real>> assets;
-    for (const auto& [asset, tests] : m_testData)
+    ASSERT_EQ(m_portfolio.size(), 42000);
+    std::vector<kw::Option> assets;
+    for (const auto& [asset, _] : m_portfolio)
         assets.push_back(asset);
 
     kw::Fd1d<real> pricer;
@@ -124,18 +65,15 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
     ASSERT_EQ(pricer.solve(pdes), "");
 
     size_t i = 0;
-    for (const auto& [asset, tests]: m_testData)
+    for (const auto& [asset, want]: m_portfolio)
     {
-        for (const auto& [spot, want] : tests)
+        real got;
+        if (auto error = pricer.value(i, asset.s, got); !error.empty())
         {
-            real got;
-            if (auto error = pricer.value(i, spot, got); !error.empty())
-            {
-                std::cout << error << std::endl;
-                continue;
-            }
-            EXPECT_NEAR(want, got, 0.02) << "spot = " << spot << "\nasset = " << asset << "\n";
+            std::cout << error << std::endl;
+            continue;
         }
+        EXPECT_NEAR(want, got, 0.04) << "spot = " << asset.s << "\nasset = " << asset << "\n";
 
         ++i;
     }

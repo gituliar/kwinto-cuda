@@ -103,8 +103,8 @@ kw::Fd1d<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
     {
         const auto& pde = pdes[i];
 
-        Real xMax = std::max<Real>(log(pde.k) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.k));
-        Real xMin = std::min<Real>(log(pde.k) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.k));
+        Real xMax = std::max<Real>(log(pde.s) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.s));
+        Real xMin = std::min<Real>(log(pde.s) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.s));
         Real dx = (xMax - xMin) / (m_xDim - 1);
 
         for (auto j = 0; j < m_xDim; ++j)
@@ -382,32 +382,30 @@ kw::Fd1d_Gpu<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
     }
 
     // 2. Init X-Grid with Boundary Conditions
+    for (auto ni = 0; ni < m_n; ++ni)
     {
-        for (auto ni = 0; ni < m_n; ++ni)
+        const auto& pde = pdes[ni];
+
+        Real xMax = std::max<Real>(log(pde.s) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.s));
+        Real xMin = std::min<Real>(log(pde.s) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.s));
+        Real dx = (xMax - xMin) / (m_xDim - 1);
+
+        for (auto xi = 0; xi < m_xDim; ++xi)
         {
-            const auto& pde = pdes[ni];
+            Real x = xMin + xi * dx;
 
-            Real xMax = std::max<Real>(log(pde.k) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.k));
-            Real xMin = std::min<Real>(log(pde.k) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.k));
-            Real dx = (xMax - xMin) / (m_xDim - 1);
+            pde.payoff(x, pde.k, m__v(ni, xi));
+            m__x(ni, xi) = x;
 
-            for (auto xi = 0; xi < m_xDim; ++xi)
-            {
-                Real x = xMin + xi * dx;
-
-                pde.payoff(x, pde.k, m__v(ni, xi));
-                m__x(ni, xi) = x;
-
-                m__pay(ni, xi) = pde.earlyExercise ? m__v(ni, xi) : 0;
-            }
+            m__pay(ni, xi) = pde.earlyExercise ? m__v(ni, xi) : 0;
         }
+    }
 
-        // CPU -> GPU
-        {
-            m_pay = m__pay;
-            m_v = m__v;
-            m_x = m__x;
-        }
+    // CPU -> GPU
+    {
+        m_pay = m__pay;
+        m_v = m__v;
+        m_x = m__x;
     }
 
     cusparseStatus_t status;

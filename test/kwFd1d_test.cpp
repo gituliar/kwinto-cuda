@@ -15,18 +15,18 @@ protected:
         m_config.xDim = 1024;
 
         m_testData = {
-            {{1.0, 100., 0.2, 0.06, 0.08, true, kw::kParity::Put}, {
+            {{1.0, 100., 0.2, 0.06, 0.08, 100., true, kw::kParity::Put}, {
                 {90, 13.988}, {100, 8.409}, {110, 4.659}}},
-            {{1.0, 100., 0.2, 0.06, 0.08, true, kw::kParity::Call}, {
+            {{1.0, 100., 0.2, 0.06, 0.08, 100., true, kw::kParity::Call}, {
                 {90, 2.947}, {100, 6.842}, {110, 12.794}}},
-            {{1.0, 100., 0.2, 0.06, 0.08, false, kw::kParity::Put}, {
+            {{1.0, 100., 0.2, 0.06, 0.08, 100., false, kw::kParity::Put}, {
                 {90, 13.944}, {100, 8.397}, {110, 4.656}}},
-            {{1.0, 100., 0.2, 0.06, 0.08, false, kw::kParity::Call}, {
+            {{1.0, 100., 0.2, 0.06, 0.08, 100., false, kw::kParity::Call}, {
                 {90, 2.848}, {100, 6.532}, {110, 12.022}}},
         };
     }
 
-    std::vector<std::pair<kw::Option<real>, std::vector<std::pair<real, real>>>>
+    std::vector<std::pair<kw::Option, std::vector<std::pair<real, real>>>>
         m_testData;
 
     kw::Fd1dConfig
@@ -36,7 +36,7 @@ protected:
 
 TEST_F(kwFd1dTest, Cpu)
 {
-    std::vector<kw::Option<real>> assets;
+    std::vector<kw::Option> assets;
     for (const auto& test : m_testData)
         assets.push_back(test.first);
 
@@ -67,7 +67,7 @@ TEST_F(kwFd1dTest, Cpu)
 
 TEST_F(kwFd1dTest, Gpu)
 {
-    std::vector<kw::Option<real>> assets;
+    std::vector<kw::Option> assets;
     for (const auto& test : m_testData)
         assets.push_back(test.first);
 

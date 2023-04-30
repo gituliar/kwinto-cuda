@@ -38,10 +38,12 @@ target_link_libraries(
 add_library(
   kwinto_lib
 
+  "kwAsset.cpp"
   "kwBenchmark.cpp"
-  "kwBlackScholes.cpp"
   "kwCommon.cpp"
   "kwFd1d.cpp"
+  "kwPortfolio.cpp"
+  "kwString.cpp"
 
   "kwVersion.cpp"
 )

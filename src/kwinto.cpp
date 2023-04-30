@@ -10,13 +10,13 @@
 
 #include "kwFd1d.h"
 #include "kwTime.h"
-#include "kwString.h"
+#include "kwPortfolio.h"
 
 
 namespace kw {
 
 constexpr char usage[] = R"(
-kwinto - Financial Analytics
+kwinto - Financial Analytics for Equity Market Modeling
 
 Usage:
     kwinto bench [options] <portfolio>
@@ -43,83 +43,12 @@ Options:
 
 using Args = std::map<std::string, docopt::value>;
 
-template<typename Real>
-using Portfolio = std::map<kw::Option<Real>, std::vector<std::pair<Real, Real>>>;
 
 
-
-template<typename Real>
-kw::Error
-    loadPortfolio(const Args& args, Portfolio<Real>& portfolio)
-{
-    const auto srcPath = std::filesystem::absolute(args.at("<portfolio>").asString());
-    std::ifstream src(srcPath);
-    if (!src.is_open())
-        return "loadPortfolio: Failed to open " + srcPath.string();
-
-    int e, q, r, s, t, v, w, z;
-    {
-        std::string header;
-        std::getline(src, header);
-
-        int i = 0;
-        e = q = r = s = t = v = w = z = -1;
-        for (const auto& colName : kw::split(header, ','))
-        {
-            if (colName == "early_exercise")
-                e = i;
-            else if (colName == "dividend_rate")
-                q = i;
-            else if (colName == "interest_rate")
-                r = i;
-            else if (colName == "spot")
-                s = i;
-            else if (colName == "time_to_maturity")
-                t = i;
-            else if (colName == "price")
-                v = i;
-            else if (colName == "parity")
-                w = i;
-            else if (colName == "volatility")
-                z = i;
-
-            ++i;
-        }
-        if (e == -1 || q == -1 || r == -1 || s == -1 || t == -1 || v == -1 || w == -1 || z == -1)
-        {
-            std::stringstream error;
-            error << "loadPortfolio: Some option data is missing: e=" << e << ", q=" << q << ", r=" << r
-                << ", s=" << s << ", t=" << t << ", v=" << v << ", w=" << w << ", z=" << z;
-            return error.str();
-        }
-    }
-
-    for (std::string line; std::getline(src, line);)
-    {
-        auto vals = kw::split(line, ',');
-
-        Real price, spot;
-        kw::fromString(vals[v], price);
-        kw::fromString(vals[s], spot);
-
-        kw::Option<Real> asset;
-        asset.k = 100;
-        kw::fromString(vals[t], asset.t);
-        kw::fromString(vals[z], asset.z);
-        kw::fromString(vals[q], asset.q);
-        kw::fromString(vals[r], asset.r);
-        asset.e = (vals[e] == "a");
-        asset.w = vals[w] == "c" ? kw::kParity::Call : kw::kParity::Put;
-
-        portfolio[asset].emplace_back(spot, price);
-    }
-
-    return "";
-}
 
 template<typename Real, typename Pricer>
 kw::Error
-    pricePortfolio(const Portfolio<Real>& portfolio, kw::Fd1dConfig config, size_t batchSize, size_t batchCount)
+    benchPortfolio(const kw::Portfolio& portfolio, kw::Fd1dConfig config, size_t batchSize, size_t batchCount, double tolerance)
 {
     Pricer pricer;
 
@@ -131,9 +60,9 @@ kw::Error
         batchCount = (portfolio.size() + batchSize - 1) / batchSize;
 
     if (auto error = pricer.allocate(config); !error.empty())
-        return "pricePortfolio: " + error;
+        return "benchPortfolio: " + error;
 
-    std::vector<std::vector<kw::Option<Real>>> batches(1);
+    std::vector<std::vector<kw::Option>> batches(1);
     {
         auto assets = std::ref(batches[0]);
         for (const auto& [asset, _] : portfolio)
@@ -152,7 +81,7 @@ kw::Error
 
         // 1. Init
         if (auto error = kw::Fd1dPdeFor(assets, config, pdes); !error.empty())
-            return "pricePortfolio: " + error;
+            return "benchPortfolio: " + error;
 
         // 2. Solve
         std::string label;
@@ -169,7 +98,7 @@ kw::Error
 
         if (assets.size() == batchSize) { KW_BENCHMARK_RESUME(label); }
         if (auto error = pricer.solve(pdes); !error.empty())
-            return "pricePortfolio: " + error;
+            return "benchPortfolio: " + error;
         if (assets.size() == batchSize) { KW_BENCHMARK_PAUSE(label); }
 
         // 3. Check
@@ -177,31 +106,31 @@ kw::Error
         {
             const auto& asset = assets[j];
 
-            for (const auto& [spot, price] : portfolio.at(asset))
+            const auto& price = portfolio.at(asset);
+            const auto spot = 100.;
+
+            Real got;
+            if (auto error = pricer.value(j, spot, got); !error.empty())
             {
-                Real got;
-                if (auto error = pricer.value(j, spot, got); !error.empty())
-                {
-                    std::cerr << error << std::endl;
-                    continue;
-                }
-                if (std::abs(price - got) > 0.01)
-                {
-                    std::cerr << "id:     " << i << ":" << j << std::endl;
-                    std::cerr << "pricer: " << label << std::endl;
-                    std::cerr << "want:   " << price << std::endl;
-                    std::cerr << "got:    " << got << std::endl;
-                    std::cerr << "diff:   " << price - got << std::endl;
-                    std::cerr << "spot:   " << spot << std::endl;
-                    std::cerr << "asset:  " << asset << std::endl;
-                    std::cerr << std::endl;
-                }
+                std::cerr << error << std::endl;
+                continue;
+            }
+            if (std::abs(price - got) > tolerance)
+            {
+                std::cerr << "id:     " << i << ":" << j << std::endl;
+                std::cerr << "pricer: " << label << std::endl;
+                std::cerr << "want:   " << price << std::endl;
+                std::cerr << "got:    " << got << std::endl;
+                std::cerr << "diff:   " << price - got << std::endl;
+                std::cerr << "spot:   " << spot << std::endl;
+                std::cerr << "asset:  " << asset << std::endl;
+                std::cerr << std::endl;
             }
         }
     }
 
     if (auto error = pricer.free(); !error.empty())
-        return "pricePortfolio: " + error;
+        return "benchPortfolio: " + error;
 
     return "";
 }
@@ -219,9 +148,13 @@ kw::Error
     auto batchCount = args.at("-n").asLong();
     auto batchSize = args.at("-b").asLong();
 
+    double tolerance;
+    if (auto error = kw::fromString(args.at("-e").asString(), tolerance); !error.empty())
+        return "cmdBench: Fail to parse '-n <num>': " + error;
 
-    Portfolio<double> portfolio;
-    if (auto error = loadPortfolio(args, portfolio); !error.empty())
+
+    kw::Portfolio portfolio;
+    if (auto error = kw::loadPortfolio(args.at("<portfolio>").asString(), portfolio); !error.empty())
         return "cmdBench: " + error;
 
     std::cout << "Portfolio" << std::endl;
@@ -231,11 +164,11 @@ kw::Error
     std::cout << std::endl;
 
 
-    if (auto error = pricePortfolio<double, kw::Fd1d<double>>(portfolio, config, batchSize, batchCount); !error.empty())
+    if (auto error = benchPortfolio<double, kw::Fd1d<double>>(portfolio, config, batchSize, batchCount, tolerance); !error.empty())
         return "cmdBench: " + error;
     KW_BENCHMARK_PRINT("Fd1d<double>::solve");
 
-    if (auto error = pricePortfolio<double, kw::Fd1d_Gpu<double>>(portfolio, config, batchSize, batchCount); !error.empty())
+    if (auto error = benchPortfolio<double, kw::Fd1d_Gpu<double>>(portfolio, config, batchSize, batchCount, tolerance); !error.empty())
         return "cmdBench: " + error;
     KW_BENCHMARK_PRINT("Fd1d_Gpu<double>::solve");
 

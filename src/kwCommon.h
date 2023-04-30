@@ -2,6 +2,9 @@
 
 #include <string>
 
+#include "cuda_runtime.h"
+
+
 namespace kw
 {
 

@@ -24,7 +24,7 @@ protected:
         m_euroPut.w = kw::kParity::Put;
     }
 
-    kw::Option<real>
+    kw::Option
         m_euroPut;
     std::map<real, real>
         m_euroPutPrice = {
@@ -33,7 +33,7 @@ protected:
             {110., 2.987}
         };
 
-    kw::Option<real>
+    kw::Option
         m_euroCall;
     std::map<real, real>
         m_euroCallPrice = {
@@ -46,7 +46,7 @@ protected:
 
 TEST_F(kwBlackScholesTest, Exact)
 {
-    std::vector<kw::Option<real>> assets;
+    std::vector<kw::Option> assets;
     assets.push_back(m_euroPut);
     assets.push_back(m_euroCall);
 
