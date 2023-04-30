@@ -1,4 +1,4 @@
-t,spot,volatility,interest_rate,dividend_rate,parity,early_exercise,price,delta,gamma,vega,theta,rgo
+time_to_maturity,spot,volatility,interest_rate,dividend_rate,parity,early_exercise,price,delta,gamma,vega,theta,rgo
 0.125,25,0.1,0.02,0.02,p,a,75.,-1.,0.,0.,0.,0.
 0.125,25,0.1,0.02,0.02,p,e,74.812734,-0.997503,0.,0.,-0.004618,-0.124688
 0.125,25,0.1,0.02,0.02,c,a,0.,0.,0.,0.,0.,0.

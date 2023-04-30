@@ -5,10 +5,6 @@
 #include "cuda.h"
 #include "cusparse.h"
 
-#define KW_BENCHMARK_ON
-#include "kwBenchmark.h"
-
-
 
 template<typename Real>
 kw::Error
@@ -391,8 +387,8 @@ kw::Fd1d_Gpu<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
         {
             const auto& pde = pdes[ni];
 
-            Real xMax = log(pde.k) + 5 * pde.z * sqrt(pde.t);
-            Real xMin = log(pde.k) - 5 * pde.z * sqrt(pde.t);
+            Real xMax = std::max<Real>(log(pde.k) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.k));
+            Real xMin = std::min<Real>(log(pde.k) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.k));
             Real dx = (xMax - xMin) / (m_xDim - 1);
 
             for (auto xi = 0; xi < m_xDim; ++xi)
@@ -541,8 +537,8 @@ kw::Fd1d_Gpu<Real>::value(const size_t ni, const Real s, Real& v) const
 
     if ((xi == 0) || (xi == m_xDim))
     {
-        const auto sMin = std::exp(m_x(ni, 0));
-        const auto sMax = std::exp(m_x(ni, m_xDim - 1));
+        const auto sMin = std::exp(m__x(ni, 0));
+        const auto sMax = std::exp(m__x(ni, m_xDim - 1));
         return "Fd1d_Gpu::value: Spot " + std::to_string(s) + " not in range (" + std::to_string(sMin)
             + ", " + std::to_string(sMax) + ")";
     }

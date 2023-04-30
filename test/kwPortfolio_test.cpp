@@ -56,7 +56,7 @@ protected:
                     r = i;
                 else if (colName == "spot")
                     s = i;
-                else if (colName == "t")
+                else if (colName == "time_to_maturity")
                     t = i;
                 else if (colName == "price")
                     v = i;
@@ -91,10 +91,6 @@ protected:
                 kw::fromString(vals[r], asset.r);
                 asset.e = (vals[e] == "a");
                 asset.w = vals[w] == "c" ? kw::kParity::Call : kw::kParity::Put;
-
-                //if (asset.t != 1.0 || asset.z != 0.2 || asset.r != 0.06 || asset.q != 0.08 || spot != 100)
-                //if (asset.t != 1.0)
-                //    continue;
 
                 m_testData[asset].emplace_back(spot, price);
             }

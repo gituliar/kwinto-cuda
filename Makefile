@@ -1,5 +1,7 @@
 release: config build check
 
+run:
+	./out/linux-release/src/kwinto bench test/portfolio.csv -v
 
 build:
 	cmake --build --preset linux-release
@@ -15,4 +17,4 @@ install-test:
 
 
 check:
-	./bin/kwinto_test
+	./out/linux-release/test/kwinto_test

@@ -8,10 +8,6 @@
 namespace kw
 {
 
-enum class kDevice { CPU, GPU };
-constexpr auto CPU = kDevice::CPU;
-constexpr auto GPU = kDevice::GPU;
-
 enum class kStorage { ColMajor, RowMajor };
 
 
