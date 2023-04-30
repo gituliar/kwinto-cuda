@@ -2,7 +2,10 @@
     "name": "kwinto",
     "version-string": "0.1.0",
     "dependencies": [
-      "docopt",
+      {
+        "name": "boost-regex",
+        "platform": "windows"
+      },
       "gtest"
     ],
     "builtin-baseline": "716c3524a54f1f50a25d16a4cdd360f5a7fcc150"

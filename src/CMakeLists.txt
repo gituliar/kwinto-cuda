@@ -1,3 +1,5 @@
+include(FetchContent)
+
 ### kwinto_gpu
 add_library(
   kwinto_gpu
@@ -45,8 +47,18 @@ add_library(
 )
 
 # Link Docopt
-find_package(
-    docopt CONFIG REQUIRED)
+if(DEFINED WIN32)
+    # Use boost::regex due to CRASH on Win1x. See https://github.com/docopt/docopt.cpp/issues/67
+    set(USE_BOOST_REGEX ON CACHE INTERNAL "docopt: Replace std::regex with Boost.Regex")
+endif()
+FetchContent_Declare(
+  docopt
+  GIT_SHALLOW    TRUE
+  GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
+  GIT_TAG        v0.6.3
+)
+FetchContent_MakeAvailable(docopt)
+
 
 target_link_libraries(
     kwinto_lib
@@ -54,11 +66,6 @@ target_link_libraries(
         kwinto_gpu
 
         CUDA::cusparse
-)
-
-set_property(
-    TARGET kwinto_lib PROPERTY
-        POSITION_INDEPENDENT_CODE ON
 )
 
 
@@ -85,5 +92,6 @@ target_link_libraries(
 	PRIVATE
         kwinto_lib
 
-        $<IF:$<TARGET_EXISTS:docopt>,docopt,docopt_s>
+        docopt_s
+        #$<IF:$<TARGET_EXISTS:docopt>,docopt,docopt_s>
 )

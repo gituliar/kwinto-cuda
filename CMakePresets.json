@@ -82,6 +82,11 @@
       "name": "linux-release",
       "displayName": "Linux Release",
       "configurePreset": "linux-release"
+    },
+    {
+      "name": "win10-debug",
+      "displayName": "Win10 Debug",
+      "configurePreset": "win10-debug"
     }
   ]
 }
