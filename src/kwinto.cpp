@@ -26,14 +26,19 @@ Arguments:
 
 Options:
     -b <num>        Price <num> options per batch [default: 128]
+    --cpu32         Run single-precision benchmark on CPU 
+    --cpu64         Run double-precision benchmark on CPU
     --cuda-n <num>  Run <num> threads per CUDA block over the n-dimension [default: 1]
     --cuda-x <num>  Run <num> threads per CUDA block over the x-dimension [default: 128]
     -e <num>        Accept <num> error for calculated option prices [default: 0.01]
+    --gpu32         Run single-precision benchmark on GPU
+    --gpu64         Run double-precision benchmark on GPU
     -n <num>        Run <num> batches (when 0 run all) [default: 0]
-    -o <file>       Write benchmark results into <file>
+    -o <file>       Save benchmark results in JSON <file>
     -t <num>        Use <num> points for t-grid [default: 2048]
-    -x <num>        Use <num> points for x-grid [default: 2048]
     -v              Show extra details, be verbose
+    -x <num>        Use <num> points for x-grid [default: 2048]
+
     -h --help       Print this screen
     --version       Print Kwinto version
 
@@ -48,7 +53,13 @@ using Args = std::map<std::string, docopt::value>;
 
 template<typename Real, typename Pricer>
 kw::Error
-    benchPortfolio(const kw::Portfolio& portfolio, kw::Fd1dConfig config, size_t batchSize, size_t batchCount, double tolerance)
+    benchPortfolio(
+        const kw::Portfolio& portfolio,
+        kw::Fd1dConfig config,
+        size_t batchSize,
+        size_t batchCount,
+        double tolerance,
+        const std::string& label)
 {
     Pricer pricer;
 
@@ -84,18 +95,6 @@ kw::Error
             return "benchPortfolio: " + error;
 
         // 2. Solve
-        std::string label;
-        if constexpr (std::is_same_v<Pricer, kw::Fd1d<float>>)
-            label = "Fd1d<float>::solve";
-        else if constexpr (std::is_same_v<Pricer, kw::Fd1d<double>>)
-            label = "Fd1d<double>::solve";
-        else if constexpr (std::is_same_v<Pricer, kw::Fd1d_Gpu<float>>)
-            label = "Fd1d_Gpu<float>::solve";
-        else if constexpr (std::is_same_v<Pricer, kw::Fd1d_Gpu<double>>)
-            label = "Fd1d_Gpu<double>::solve";
-        else
-            static_assert("unexpected Pricer type");
-
         if (assets.size() == batchSize) { KW_BENCHMARK_RESUME(label); }
         if (auto error = pricer.solve(pdes); !error.empty())
             return "benchPortfolio: " + error;
@@ -107,10 +106,9 @@ kw::Error
             const auto& asset = assets[j];
 
             const auto& price = portfolio.at(asset);
-            const auto spot = 100.;
 
             Real got;
-            if (auto error = pricer.value(j, spot, got); !error.empty())
+            if (auto error = pricer.value(j, asset.s, got); !error.empty())
             {
                 std::cerr << error << std::endl;
                 continue;
@@ -122,7 +120,7 @@ kw::Error
                 std::cerr << "want:   " << price << std::endl;
                 std::cerr << "got:    " << got << std::endl;
                 std::cerr << "diff:   " << price - got << std::endl;
-                std::cerr << "spot:   " << spot << std::endl;
+                std::cerr << "spot:   " << asset.s << std::endl;
                 std::cerr << "asset:  " << asset << std::endl;
                 std::cerr << std::endl;
             }
@@ -164,13 +162,40 @@ kw::Error
     std::cout << std::endl;
 
 
-    if (auto error = benchPortfolio<double, kw::Fd1d<double>>(portfolio, config, batchSize, batchCount, tolerance); !error.empty())
-        return "cmdBench: " + error;
-    KW_BENCHMARK_PRINT("Fd1d<double>::solve");
+    bool runAll = !args.at("--cpu32").asBool() && !args.at("--cpu64").asBool() &&
+        !args.at("--gpu32").asBool() && !args.at("--gpu64").asBool();
 
-    if (auto error = benchPortfolio<double, kw::Fd1d_Gpu<double>>(portfolio, config, batchSize, batchCount, tolerance); !error.empty())
-        return "cmdBench: " + error;
-    KW_BENCHMARK_PRINT("Fd1d_Gpu<double>::solve");
+    if (runAll || args.at("--cpu32").asBool())
+    {
+        const auto label = "Fd1d<float>::solve";
+        if (auto error = benchPortfolio<float, kw::Fd1d<float>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+            return "cmdBench: " + error;
+        KW_BENCHMARK_PRINT(label);
+    }
+
+    if (runAll || args.at("--gpu32").asBool())
+    {
+        const auto label = "Fd1d_Gpu<float>::solve";
+        if (auto error = benchPortfolio<float, kw::Fd1d_Gpu<float>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+            return "cmdBench: " + error;
+        KW_BENCHMARK_PRINT(label);
+    }
+
+    if (runAll || args.at("--cpu64").asBool())
+    {
+        const auto label = "Fd1d<double>::solve";
+        if (auto error = benchPortfolio<double, kw::Fd1d<double>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+            return "cmdBench: " + error;
+        KW_BENCHMARK_PRINT(label);
+    }
+
+    if (runAll || args.at("--gpu64").asBool())
+    {
+        const auto label = "Fd1d_Gpu<double>::solve";
+        if (auto error = benchPortfolio<double, kw::Fd1d_Gpu<double>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+            return "cmdBench: " + error;
+        KW_BENCHMARK_PRINT(label);
+    }
 
     return "";
 }
