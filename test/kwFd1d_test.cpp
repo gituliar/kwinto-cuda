@@ -11,7 +11,7 @@ protected:
         SetUp() override
     {
         m_config.theta = 0.5;
-        m_config.tDim = 768;
+        m_config.tDim = 1024;
         m_config.xDim = 1024;
 
         m_testData = {
@@ -23,6 +23,8 @@ protected:
                 {90, 13.944}, {100, 8.397}, {110, 4.656}}},
             {{1.0, 100., 0.2, 0.06, 0.08, 100., false, kw::kParity::Call}, {
                 {90, 2.848}, {100, 6.532}, {110, 12.022}}},
+            {{3.0, 200., 0.1, 0.08, 0.04, 100., false, kw::kParity::Put}, {
+                {100, 68.636}}},
         };
     }
 

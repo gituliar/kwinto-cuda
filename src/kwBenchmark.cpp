@@ -26,7 +26,7 @@ kw::BenchmarkRecord::print(const std::string& label, bool details)
     auto timeUnits = "ms";
 
     std::cout << std::setprecision(timePrecision) << std::fixed;
-    std::cout << "Benchmark " << label << std::endl;
+    std::cout << "Benchmark for " << label << std::endl;
 
     if (m_n == 0)
     {

@@ -16,7 +16,7 @@
 namespace kw {
 
 constexpr char usage[] = R"(
-kwinto - Financial Analytics for Equity Market Modeling
+kwinto - Analytics for Options Trading
 
 Usage:
     kwinto bench [options] <portfolio>
@@ -25,23 +25,25 @@ Arguments:
     <portfolio>     Read options data from <portfolio> CSV file
 
 Options:
+    --amer          Include american options
     -b <num>        Price <num> options per batch [default: 128]
+    --call          Include call options
     --cpu32         Run single-precision benchmark on CPU 
     --cpu64         Run double-precision benchmark on CPU
-    --cuda-n <num>  Run <num> threads per CUDA block over the n-dimension [default: 1]
+    --cuda-n <num>  Run <num> threads per CUDA block over the n-dimension [default: 8]
     --cuda-x <num>  Run <num> threads per CUDA block over the x-dimension [default: 128]
-    -e <num>        Accept <num> error for calculated option prices [default: 0.01]
+    -e <num>        Reject option prices less than <num> from RRMS error stats [default: 0.5]
+    --euro          Include european options
     --gpu32         Run single-precision benchmark on GPU
     --gpu64         Run double-precision benchmark on GPU
     -n <num>        Run <num> batches (when 0 run all) [default: 0]
-    -o <file>       Save benchmark results in JSON <file>
-    -t <num>        Use <num> points for t-grid [default: 2048]
+    --put           Include put options
+    -t <num>        Use <num> points for t-grid [default: 1024]
     -v              Show extra details, be verbose
-    -x <num>        Use <num> points for x-grid [default: 2048]
+    -x <num>        Use <num> points for x-grid [default: 1024]
 
     -h --help       Print this screen
     --version       Print Kwinto version
-
 )";
 
 }
@@ -49,6 +51,50 @@ Options:
 using Args = std::map<std::string, docopt::value>;
 
 
+
+kw::Error
+    printGpuInfo()
+{
+    int nDevices;
+    cudaGetDeviceCount(&nDevices);
+
+    for (int i = 0; i < nDevices; i++)
+    {
+        cudaDeviceProp device;
+        cudaGetDeviceProperties(&device, i);
+
+        std::cout << "Devices Info #" << i <<  std::endl;
+        std::cout << "    Name:                 " << device.name << std::endl;
+        std::cout << "    Integrated:           " << device.integrated << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "    Total SM:             " <<
+            device.multiProcessorCount << std::endl;
+        std::cout << "    Clock Rate:           " <<
+            device.clockRate / 1e3 << " MHz" << std::endl;
+        //std::cout << "    Warp size (threads):  " <<
+        //    device.warpSize << std::endl;
+        std::cout << "    32-bit Regs (per SM): " <<
+            device.regsPerMultiprocessor << std::endl;
+        std::cout << "    Max Blocks (per SM):  " <<
+            device.maxBlocksPerMultiProcessor << std::endl;
+        std::cout << "    Max Threads (per SM): " <<
+            device.maxThreadsPerMultiProcessor << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "    Total Memory:         " <<
+            device.totalGlobalMem / 1024 / 1024 << " MB" << std::endl;
+        std::cout << "    Memory Clock Rate:    " <<
+            device.memoryClockRate / 1e3 << " MHz" << std::endl;
+        std::cout << "    Memory Bus Width:     " <<
+            device.memoryBusWidth << " bits" << std::endl;
+        std::cout << "    Peak Bandwidth:       " <<
+            2.0 * device.memoryClockRate * (device.memoryBusWidth / 8) / 1.0e6 << " GB/s" << std::endl;
+        std::cout << std::endl;
+    }
+
+    return "";
+}
 
 
 template<typename Real, typename Pricer>
@@ -84,6 +130,8 @@ kw::Error
         }
     }
 
+    double absDiffSum1 = 0, absDiffSum2 = 0, relDiffSum1 = 0, relDiffSum2 = 0;
+    size_t absDiffSize = 0, relDiffSize = 0;
     for (auto i = 0; i < batchCount; ++i)
     {
         const auto& assets = batches[i];
@@ -95,16 +143,23 @@ kw::Error
             return "benchPortfolio: " + error;
 
         // 2. Solve
-        if (assets.size() == batchSize) { KW_BENCHMARK_RESUME(label); }
+        if (assets.size() == batchSize)
+        {
+            KW_BENCHMARK_RESUME(label);
+        }
+
         if (auto error = pricer.solve(pdes); !error.empty())
             return "benchPortfolio: " + error;
-        if (assets.size() == batchSize) { KW_BENCHMARK_PAUSE(label); }
 
-        // 3. Check
+        if (assets.size() == batchSize)
+        {
+            KW_BENCHMARK_PAUSE(label);
+        }
+
+        // 3. Collect statistics
         for (auto j = 0; j < assets.size(); ++j)
         {
             const auto& asset = assets[j];
-
             const auto& price = portfolio.at(asset);
 
             Real got;
@@ -113,18 +168,38 @@ kw::Error
                 std::cerr << error << std::endl;
                 continue;
             }
-            if (std::abs(price - got) > tolerance)
+
+            if (price >= tolerance)
             {
-                std::cerr << "id:     " << i << ":" << j << std::endl;
-                std::cerr << "pricer: " << label << std::endl;
-                std::cerr << "want:   " << price << std::endl;
-                std::cerr << "got:    " << got << std::endl;
-                std::cerr << "diff:   " << price - got << std::endl;
-                std::cerr << "spot:   " << asset.s << std::endl;
-                std::cerr << "asset:  " << asset << std::endl;
-                std::cerr << std::endl;
+                double absDiff = std::abs(price - got);
+                double relDiff = absDiff / price;
+
+                absDiffSum1 += absDiff;
+                absDiffSum2 += absDiff * absDiff;
+                absDiffSize++;
+
+                relDiffSum1 += relDiff;
+                relDiffSum2 += relDiff * relDiff;
+                relDiffSize++;
             }
         }
+    }
+
+    {
+        auto mae = absDiffSum1 / absDiffSize;
+        auto rmse = std::sqrt(absDiffSum2 / absDiffSize - mae * mae);
+        auto mre = relDiffSum1 / relDiffSize;
+        auto rrmse = std::sqrt(relDiffSum2 / relDiffSize - mre * mre);
+
+        std::cout << "Errors for " << label << std::endl;
+        std::cout << std::scientific;
+        std::cout << "    RMS error:  " << rmse << std::endl;
+        std::cout << "    RRMS error: " << rrmse << std::endl;
+        std::cout << "    MA error:   " << mae << std::endl;
+        std::cout << "    MR error:   " << mre << std::endl;
+        std::cout << std::fixed;
+        std::cout << "    size:       " << absDiffSize << std::endl;
+        std::cout << std::endl;
     }
 
     if (auto error = pricer.free(); !error.empty())
@@ -150,15 +225,53 @@ kw::Error
     if (auto error = kw::fromString(args.at("-e").asString(), tolerance); !error.empty())
         return "cmdBench: Fail to parse '-n <num>': " + error;
 
+    if (auto error = printGpuInfo(); !error.empty())
+        return "cmdBench: " + error;
 
     kw::Portfolio portfolio;
     if (auto error = kw::loadPortfolio(args.at("<portfolio>").asString(), portfolio); !error.empty())
         return "cmdBench: " + error;
+    if (args.at("--amer").asBool() != args.at("--euro").asBool())
+    {
+        bool keepAmerican = args.at("--amer").asBool();
+        bool keepEuropean = args.at("--euro").asBool();
+
+        for (auto ii = portfolio.begin(); ii != portfolio.end(); )
+        {
+            const auto& asset = ii->first;
+            if ((keepAmerican && !asset.e) || (keepEuropean && asset.e))
+                portfolio.erase(ii++);
+            else
+                ++ii;
+        }
+    }
+    if (args.at("--call").asBool() != args.at("--put").asBool())
+    {
+        bool keepCall = args.at("--call").asBool();
+        bool keepPut = args.at("--put").asBool();
+
+        for (auto ii = portfolio.begin(); ii != portfolio.end(); )
+        {
+            const auto& asset = ii->first;
+            if ((keepCall && asset.w != kw::kParity::Call) || (keepPut && asset.w != kw::kParity::Put))
+                portfolio.erase(ii++);
+            else
+                ++ii;
+        }
+    }
+    //for (auto ii = portfolio.begin(); ii != portfolio.end(); )
+    //{
+    //    const auto& asset = ii->first;
+    //    if (asset.r != asset.q)
+    //        portfolio.erase(ii++);
+    //    else
+    //        ++ii;
+    //}
 
     std::cout << "Portfolio" << std::endl;
-    std::cout << "    batch count: " << batchCount << std::endl;
-    std::cout << "    batch size:  " << batchSize << std::endl;
-    std::cout << "    total:       " << portfolio.size() << std::endl;
+    std::cout << "    Assets:      " << portfolio.size() << std::endl;
+    std::cout << "    Batch count: " << batchCount << std::endl;
+    std::cout << "    Batch size:  " << batchSize << std::endl;
     std::cout << std::endl;
 
 

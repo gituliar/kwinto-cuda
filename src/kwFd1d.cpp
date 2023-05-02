@@ -103,8 +103,8 @@ kw::Fd1d<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
     {
         const auto& pde = pdes[i];
 
-        Real xMax = std::max<Real>(log(pde.s) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.s));
-        Real xMin = std::min<Real>(log(pde.s) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.s));
+        Real xMax = std::max<Real>(log(pde.k) + 10 * pde.z * sqrt(pde.t), log(5 * pde.k));
+        Real xMin = std::min<Real>(log(pde.k) - 10 * pde.z * sqrt(pde.t), log(0.2 * pde.k));
         Real dx = (xMax - xMin) / (m_xDim - 1);
 
         for (auto j = 0; j < m_xDim; ++j)
@@ -386,8 +386,8 @@ kw::Fd1d_Gpu<Real>::solve(const std::vector<Fd1dPde<Real>>& pdes)
     {
         const auto& pde = pdes[ni];
 
-        Real xMax = std::max<Real>(log(pde.s) + 10 * pde.z * sqrt(pde.t), log(2.5 * pde.s));
-        Real xMin = std::min<Real>(log(pde.s) - 10 * pde.z * sqrt(pde.t), log(0.1 * pde.s));
+        Real xMax = std::max<Real>(log(pde.s) + 10 * pde.z * sqrt(pde.t), log(5.0 * pde.s));
+        Real xMin = std::min<Real>(log(pde.s) - 10 * pde.z * sqrt(pde.t), log(0.2 * pde.s));
         Real dx = (xMax - xMin) / (m_xDim - 1);
 
         for (auto xi = 0; xi < m_xDim; ++xi)
