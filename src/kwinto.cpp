@@ -28,7 +28,7 @@ Options:
     --amer          Include american options
     -b <num>        Price <num> options per batch [default: 128]
     --call          Include call options
-    --cpu32         Run single-precision benchmark on CPU 
+    --cpu32         Run single-precision benchmark on CPU
     --cpu64         Run double-precision benchmark on CPU
     --cuda-n <num>  Run <num> threads per CUDA block over the n-dimension [default: 8]
     --cuda-x <num>  Run <num> threads per CUDA block over the x-dimension [default: 128]
@@ -132,6 +132,8 @@ kw::Error
 
     double absDiffSum1 = 0, absDiffSum2 = 0, relDiffSum1 = 0, relDiffSum2 = 0;
     size_t absDiffSize = 0, relDiffSize = 0;
+    double mae = 0; // Maximum Absolute Error
+    double mre = 0; // Maximum Relative Error
     for (auto i = 0; i < batchCount; ++i)
     {
         const auto& assets = batches[i];
@@ -174,6 +176,9 @@ kw::Error
                 double absDiff = std::abs(price - got);
                 double relDiff = absDiff / price;
 
+                mae = std::max(mae, absDiff);
+                mre = std::max(mre, relDiff);
+
                 absDiffSum1 += absDiff;
                 absDiffSum2 += absDiff * absDiff;
                 absDiffSize++;
@@ -186,10 +191,11 @@ kw::Error
     }
 
     {
-        auto mae = absDiffSum1 / absDiffSize;
-        auto rmse = std::sqrt(absDiffSum2 / absDiffSize - mae * mae);
-        auto mre = relDiffSum1 / relDiffSize;
-        auto rrmse = std::sqrt(relDiffSum2 / relDiffSize - mre * mre);
+        auto absDiffMean = absDiffSum1 / absDiffSize;
+        auto rmse = std::sqrt(absDiffSum2 / absDiffSize - absDiffMean * absDiffMean);
+
+        auto relDiffMean = relDiffSum1 / relDiffSize;
+        auto rrmse = std::sqrt(relDiffSum2 / relDiffSize - relDiffMean * relDiffMean);
 
         std::cout << "Errors for " << label << std::endl;
         std::cout << std::scientific;
