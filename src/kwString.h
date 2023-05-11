@@ -1,10 +1,10 @@
 #pragma once
 
+#include "Utils/kwTypes.h"
+
 #include <charconv>
 #include <string>
 #include <vector>
-
-#include "kwCommon.h"
 
 
 namespace kw

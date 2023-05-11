@@ -1,6 +1,6 @@
 #include "cuda_runtime.h"
 
-#include "kwCommon.h"
+#include "Utils/kwCuda.h"
 
 
 kw::Error

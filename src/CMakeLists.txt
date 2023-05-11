@@ -4,7 +4,7 @@ include(FetchContent)
 add_library(
   kwinto_gpu
 
-  "kwFd1d.cu"
+  "Math/kwFd1d.cu"
 )
 
 # Link CUDA
@@ -26,12 +26,6 @@ target_link_libraries(
         CUDA::cudart
 )
 
-#target_compile_options(
-#    kwinto_gpu
-#    PRIVATE
-#        $<$<COMPILE_LANGUAGE:CUDA>: -G>
-#)
-
 
 ### kinto_lib
 
@@ -40,10 +34,10 @@ add_library(
 
   "kwAsset.cpp"
   "kwBenchmark.cpp"
-  "kwCommon.cpp"
-  "kwFd1d.cpp"
   "kwPortfolio.cpp"
   "kwString.cpp"
+  "Math/kwFd1d.cpp"
+  "Utils/kwCuda.cpp"
 
   "kwVersion.cpp"
 )
@@ -62,6 +56,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(docopt)
 
 
+target_include_directories(
+    kwinto_lib
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_link_libraries(
     kwinto_lib
     PUBLIC
@@ -75,7 +75,7 @@ target_link_libraries(
 add_executable(
   kwinto
 
-  kwinto.cpp
+  "kwinto.cpp"
 )
 
 # From https://www.mattkeeter.com/blog/2018-01-06-versioning/
@@ -95,5 +95,4 @@ target_link_libraries(
         kwinto_lib
 
         docopt_s
-        #$<IF:$<TARGET_EXISTS:docopt>,docopt,docopt_s>
 )

@@ -2,7 +2,7 @@
 
 #include <cuda_runtime_api.h>
 
-#include "kwCommon.h"
+#include "Utils/kwCuda.h"
 
 
 namespace kw
@@ -18,6 +18,7 @@ public:
     __host__
     Array2d() :
         m_buf{ nullptr },
+        m_cap{ 0 },
         m_nCol{ 0 },
         m_nRow{ 0 }
     {};
@@ -44,7 +45,12 @@ public:
         if constexpr (Device == kDevice::GPU)
         {
             // CPU -> GPU
-            cudaMemcpy((void *)m_buf, src.buf(), src.bufSize(), cudaMemcpyHostToDevice);
+            //if (src.cols() != cols() || src.rows() != rows()) {
+            //    m_nCol = 0;
+            //    m_nRow = 0;
+            //    return *this;
+            //}
+            cudaMemcpy((void *)m_buf, src.buf(), src.sizeInBytes(), cudaMemcpyHostToDevice);
         }
         else if constexpr (Device == kDevice::GPU)
         {
@@ -73,8 +79,12 @@ public:
         else if constexpr (Device == kDevice::CPU)
         {
             // GPU -> CPU
-            auto size = bufSize();
-            cudaMemcpy(m_buf, src.buf(), size, cudaMemcpyDeviceToHost);
+            //if (src.cols() != cols() || src.rows() != rows()) {
+            //    m_nCol = 0;
+            //    m_nRow = 0;
+            //    return *this;
+            //}
+            cudaMemcpy(m_buf, src.buf(), sizeInBytes(), cudaMemcpyDeviceToHost);
         }
         else
             static_assert(true, "unknown device");
@@ -105,6 +115,7 @@ public:
 
         m_nCol = nCol;
         m_nRow = nRow;
+        m_cap = nCol * nRow;
 
         size_t size = nCol * nRow * sizeof(Real);
 
@@ -139,16 +150,29 @@ public:
             m_buf = nullptr;
         }
 
-        m_nCol = m_nRow = 0;
+        m_nCol = 0;
+        m_nRow = 0;
+    }
+
+    __host__
+    void
+        resize(const size_t nCol, const size_t nRow)
+    {
+        if (m_cap < nCol * nRow)
+        {
+            // FIXME: Allocate more memory
+            m_nCol = 0;
+            m_nRow = 0;
+            return;
+        }
+
+        m_nCol = nCol;
+        m_nRow = nRow;
     }
 
     __device__ __host__
     const void*
         buf() const { return (void *)m_buf; };
-    __device__ __host__
-    size_t
-        bufSize() const { return size() * sizeof(Real); }
-
 
     __device__ __host__
     size_t
@@ -159,10 +183,15 @@ public:
     __device__ __host__
     size_t
         size() const { return m_nCol * m_nRow; }
+    __device__ __host__
+    size_t
+        sizeInBytes() const { return size() * sizeof(Real); }
 
 private:
     int8_t*
         m_buf;
+    size_t
+        m_cap;
     size_t
         m_nCol;
     size_t

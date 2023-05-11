@@ -25,7 +25,7 @@ Real
 
 template<typename Real>
 Error
-    solveTridiagonal(const int xDim, const Real* al, const Real* a, const Real* au, const Real* y, Real* x)
+    solveTridiagonal(const int xDim, const Real* al, const Real* a, const Real* au, const Real* y, Real* x, size_t gap)
 {
     if (a[0] == 0)
         return "kw::solveTridiagonal: Error 1";
@@ -40,20 +40,20 @@ Error
     x[0] = y[0] / (bet = a[0]);
     for (auto j = 1; j < xDim; j++)
     {
-        gam[j] = au[j - 1] / bet;
-        bet = a[j] - al[j] * gam[j];
+        gam[j] = au[(j - 1) * gap] / bet;
+        bet = a[j * gap] - al[j * gap] * gam[j];
 
         if (bet == 0)
             return "kw::solveTridiagonal::SolveTridiagonal: Error 2";
 
-        x[j] = (y[j] - al[j] * x[j - 1]) / bet;
-        if (x[j] < 0)
+        x[j * gap] = (y[j * gap] - al[j * gap] * x[(j - 1) * gap]) / bet;
+        if (x[j * gap] < 0)
             continue;
     };
 
     for (auto j = xDim - 2; j >= 0; --j)
     {
-        x[j] -= gam[j + 1] * x[j + 1];
+        x[j * gap] -= gam[j + 1] * x[(j + 1) * gap];
     }
 
     return "";

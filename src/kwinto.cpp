@@ -8,7 +8,9 @@
 #define KW_BENCHMARK_ON
 #include "kwBenchmark.h"
 
-#include "kwFd1d.h"
+#include "Math/kwFd1d.h"
+#include "PriceEngine/kwPriceEngineFactory.h"
+#include "Utils/kwConfig.h"
 #include "kwTime.h"
 #include "kwPortfolio.h"
 
@@ -97,26 +99,25 @@ kw::Error
 }
 
 
-template<typename Real, typename Pricer>
+template<typename Real>
 kw::Error
     benchPortfolio(
         const kw::Portfolio& portfolio,
-        kw::Fd1dConfig config,
+        kw::Config config,
         size_t batchSize,
         size_t batchCount,
         double tolerance,
         const std::string& label)
 {
-    Pricer pricer;
-
     if (batchSize == 0)
         batchSize = portfolio.size();
-    config.pdeCount = batchSize;
+    config.set("FD1D.PDE_NUM", batchSize);
 
     if (batchCount == 0)
         batchCount = (portfolio.size() + batchSize - 1) / batchSize;
 
-    if (auto error = pricer.allocate(config); !error.empty())
+    kw::sPtr<kw::PriceEngine> engine;
+    if (auto error = kw::PriceEngineFactory::create(config, engine); !error.empty())
         return "benchPortfolio: " + error;
 
     std::vector<std::vector<kw::Option>> batches(1);
@@ -138,19 +139,16 @@ kw::Error
     {
         const auto& assets = batches[i];
 
-        std::vector<kw::Fd1dPde<Real>> pdes;
-
-        // 1. Init
-        if (auto error = kw::Fd1dPdeFor(assets, config, pdes); !error.empty())
+        if (auto error = engine->run(assets); !error.empty())
             return "benchPortfolio: " + error;
 
-        // 2. Solve
+        // 1. Solve
         if (assets.size() == batchSize)
         {
             KW_BENCHMARK_RESUME(label);
         }
 
-        if (auto error = pricer.solve(pdes); !error.empty())
+        if (auto error = engine->run(assets); !error.empty())
             return "benchPortfolio: " + error;
 
         if (assets.size() == batchSize)
@@ -158,14 +156,14 @@ kw::Error
             KW_BENCHMARK_PAUSE(label);
         }
 
-        // 3. Collect statistics
+        // 2. Collect statistics
         for (auto j = 0; j < assets.size(); ++j)
         {
             const auto& asset = assets[j];
             const auto& price = portfolio.at(asset);
 
-            Real got;
-            if (auto error = pricer.value(j, asset.s, got); !error.empty())
+            double got;
+            if (auto error = engine->price(j, asset.s, got); !error.empty())
             {
                 std::cerr << error << std::endl;
                 continue;
@@ -208,8 +206,8 @@ kw::Error
         std::cout << std::endl;
     }
 
-    if (auto error = pricer.free(); !error.empty())
-        return "benchPortfolio: " + error;
+    //if (auto error = pricer.free(); !error.empty())
+    //    return "benchPortfolio: " + error;
 
     return "";
 }
@@ -217,12 +215,13 @@ kw::Error
 kw::Error
     cmdBench(const Args& args)
 {
-    kw::Fd1dConfig config;
-    config.theta = 0.5;
-    config.tDim = args.at("-t").asLong();
-    config.xDim = args.at("-x").asLong();
-    config.xThreads = args.at("--cuda-x").asLong();
-    config.nThreads = args.at("--cuda-n").asLong();
+    kw::Config config;
+
+    config.set("FD1D.THETA", 0.5);
+    config.set("FD1D.T_DIM", args.at("-t").asLong());
+    config.set("FD1D.X_DIM", args.at("-x").asLong());
+    config.set("FD1D.X_THREADS", args.at("--cuda-x").asLong());
+    config.set("FD1D.N_THREADS", args.at("--cuda-n").asLong());
 
     auto batchCount = args.at("-n").asLong();
     auto batchSize = args.at("-b").asLong();
@@ -280,38 +279,45 @@ kw::Error
     std::cout << "    Batch size:  " << batchSize << std::endl;
     std::cout << std::endl;
 
-
     bool runAll = !args.at("--cpu32").asBool() && !args.at("--cpu64").asBool() &&
         !args.at("--gpu32").asBool() && !args.at("--gpu64").asBool();
 
     if (runAll || args.at("--cpu32").asBool())
     {
+        config.set("PRICE_ENGINE.MODE", "FD1D_CPU32");
+
         const auto label = "Fd1d<float>::solve";
-        if (auto error = benchPortfolio<float, kw::Fd1d<float>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+        if (auto error = benchPortfolio<float>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
         KW_BENCHMARK_PRINT(label);
     }
 
     if (runAll || args.at("--gpu32").asBool())
     {
+        config.set("PRICE_ENGINE.MODE", "FD1D_GPU32");
+
         const auto label = "Fd1d_Gpu<float>::solve";
-        if (auto error = benchPortfolio<float, kw::Fd1d_Gpu<float>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+        if (auto error = benchPortfolio<float>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
         KW_BENCHMARK_PRINT(label);
     }
 
     if (runAll || args.at("--cpu64").asBool())
     {
+        config.set("PRICE_ENGINE.MODE", "FD1D_CPU64");
+
         const auto label = "Fd1d<double>::solve";
-        if (auto error = benchPortfolio<double, kw::Fd1d<double>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+        if (auto error = benchPortfolio<double>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
         KW_BENCHMARK_PRINT(label);
     }
 
     if (runAll || args.at("--gpu64").asBool())
     {
+        config.set("PRICE_ENGINE.MODE", "FD1D_GPU64");
+
         const auto label = "Fd1d_Gpu<double>::solve";
-        if (auto error = benchPortfolio<double, kw::Fd1d_Gpu<double>>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+        if (auto error = benchPortfolio<double>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
         KW_BENCHMARK_PRINT(label);
     }

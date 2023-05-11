@@ -2,8 +2,8 @@
 
 #include <fstream>
 
-#include "kwFd1d.h"
 #include "kwPortfolio.h"
+#include "PriceEngine/kwPriceEngineFactory.h"
 
 
 
@@ -27,9 +27,9 @@ protected:
     void
         SetUp() override
     {
-        m_config.theta = 0.5;
-        m_config.tDim = 1024;
-        m_config.xDim = 1024;
+        m_config.set("FD1D.THETA", 0.5);
+        m_config.set("FD1D.T_DIM", 1024);
+        m_config.set("FD1D.X_DIM", 1024);
 
         const auto srcPath = "test/portfolio.csv";
         if (auto error = kw::loadPortfolio(srcPath, m_portfolio); !error.empty())
@@ -39,7 +39,7 @@ protected:
         }
     }
 
-    kw::Fd1dConfig
+    kw::Config
         m_config;
 
     kw::Portfolio
@@ -53,22 +53,29 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
     for (const auto& [asset, _] : m_portfolio)
         assets.push_back(asset);
 
-    kw::Fd1d<real> pricer;
-    //kw::Fd1d_Gpu<real> pricer;
+    kw::Config config;
+    config.set("PRICE_ENGINE.MODE", "FD1D_CPU64");
 
-    m_config.pdeCount = assets.size();
-    ASSERT_EQ(pricer.allocate(m_config), "");
+    kw::sPtr<kw::PriceEngine> engine;
+    ASSERT_EQ(kw::PriceEngineFactory::create(config, engine), "");
 
-    std::vector<kw::Fd1dPde<real>> pdes;
-    ASSERT_EQ(kw::Fd1dPdeFor(assets, m_config, pdes), "");
+    ASSERT_EQ(engine->run(assets), "");
 
-    ASSERT_EQ(pricer.solve(pdes), "");
+    //kw::Fd1d<real> pricer;
+
+    //m_config.pdeCount = assets.size();
+    //ASSERT_EQ(pricer.allocate(m_config), "");
+
+    //std::vector<kw::Fd1dPde<real>> pdes;
+    //ASSERT_EQ(kw::Fd1dPdeFor(assets, m_config, pdes), "");
+
+    //ASSERT_EQ(pricer.solve(pdes), "");
 
     size_t i = 0;
     for (const auto& [asset, want]: m_portfolio)
     {
         real got;
-        if (auto error = pricer.value(i, asset.s, got); !error.empty())
+        if (auto error = engine->price(i, asset.s, got); !error.empty())
         {
             std::cout << error << std::endl;
             continue;
@@ -78,5 +85,5 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
         ++i;
     }
 
-    ASSERT_EQ(pricer.free(), "");
+    //ASSERT_EQ(pricer.free(), "");
 }

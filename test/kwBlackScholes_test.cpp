@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "Math/kwFd1d.h"
 #include "kwBlackScholes.h"
-#include "kwFd1d.h"
 
 
 using real = double;
@@ -12,7 +12,6 @@ protected:
         SetUp() override
     {
         // For comparison see Section 77.13 in Quantitative Finance by Wilmott
-        m_euroCall.e = false;
         m_euroCall.k = static_cast<real>(100);
         m_euroCall.r = static_cast<real>(0.06);
         m_euroCall.q = static_cast<real>(0.02);

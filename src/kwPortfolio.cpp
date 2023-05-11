@@ -58,7 +58,6 @@ kw::loadPortfolio(const std::string& srcPath_, Portfolio& portfolio)
         auto vals = kw::split(line, ',');
 
         kw::Option asset;
-        asset.e = (vals[e] == "a");
         kw::fromString(vals[k], asset.k);
         kw::fromString(vals[q], asset.q);
         kw::fromString(vals[r], asset.r);

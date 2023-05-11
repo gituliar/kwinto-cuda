@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "Utils/kwTypes.h"
 
 #include "cuda_runtime.h"
 
@@ -8,7 +8,6 @@
 namespace kw
 {
 
-using Error = std::string;
 
 enum class kDevice { CPU, GPU };
 constexpr auto CPU = kDevice::CPU;
