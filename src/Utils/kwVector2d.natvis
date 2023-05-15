@@ -2,7 +2,7 @@
 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <Type Name="kw::Array2d&lt;0,*,0&gt;">
+  <Type Name="kw::Vector2d&lt;*,0&gt;">
     <DisplayString Condition="m_buf == 0">empty</DisplayString>
     <DisplayString Condition="m_buf != 0">[{m_nCol},{m_nRow}] @ CPU</DisplayString>
     <Expand>
@@ -15,7 +15,7 @@
     </Expand>
   </Type>
 
-  <Type Name="kw::Array2d&lt;0,*,1&gt;">
+  <Type Name="kw::Vector2d&lt;*,1&gt;">
     <DisplayString Condition="m_buf == 0">empty</DisplayString>
     <DisplayString Condition="m_buf != 0">[{m_nCol},{m_nRow}] @ CPU</DisplayString>
     <Expand>
@@ -28,7 +28,7 @@
     </Expand>
   </Type>
 
-  <Type Name="kw::Array2d&lt;1,*&gt;">
+  <Type Name="kw::Vector2d&lt;*,*&gt;">
     <DisplayString Condition="m_buf == 0">empty</DisplayString>
     <DisplayString Condition="m_buf != 0">[{m_nCol},{m_nRow}] @ GPU</DisplayString>
   </Type>

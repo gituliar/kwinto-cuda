@@ -20,4 +20,9 @@ make_sPtr(Args &&...args)
     return std::make_shared<T>(args...);
 };
 
+
+// Taken from https://gitlab.com/libeigen/eigen/-/blob/master/Eigen/src/Core/util/ForwardDeclarations.h
+template<typename T> struct traits;
+template<typename T> struct traits<const T> : traits<T> {};
+
 }

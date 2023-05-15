@@ -1,5 +1,3 @@
-#include "cuda_runtime.h"
-
 #include "Utils/kwCuda.h"
 
 

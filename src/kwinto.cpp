@@ -195,7 +195,7 @@ kw::Error
         auto relDiffMean = relDiffSum1 / relDiffSize;
         auto rrmse = std::sqrt(relDiffSum2 / relDiffSize - relDiffMean * relDiffMean);
 
-        std::cout << "Errors for " << label << std::endl;
+        std::cout << "\nErrors for " << label << std::endl;
         std::cout << std::scientific;
         std::cout << "    RMS error:  " << rmse << std::endl;
         std::cout << "    RRMS error: " << rrmse << std::endl;

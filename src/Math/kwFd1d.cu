@@ -1,50 +1,79 @@
-﻿#include "cuda.h"
+﻿#include "Utils/kwVector2d.h"
+
+#include "cuda.h"
 
 #include <cstdio>
-
-#include "Utils/kwArray.h"
 
 
 namespace kw
 {
 
-// Calc B = [1 - θ dt 𝒜]
 template<typename Real>
 __global__
 void
-fillB_g(
-    const size_t ti,
-    Real theta,
-
-    const kw::Array2d<kw::GPU, Real> t,
-    const kw::Array2d<kw::GPU, Real> x,
-    const kw::Array2d<kw::GPU, Real> a0,
-    const kw::Array2d<kw::GPU, Real> ax,
-    const kw::Array2d<kw::GPU, Real> axx,
-
-    kw::Array2d<kw::GPU, Real> bl,
-    kw::Array2d<kw::GPU, Real> b,
-    kw::Array2d<kw::GPU, Real> bu)
+adjustEarlyExercise_cuda(
+    const size_t n,
+    const size_t xDim,
+    const Real* pay,
+    Real* v)
 {
     // pde index
     size_t ni = blockIdx.x * blockDim.x + threadIdx.x;
-    if (ni >= x.cols())
+    if (ni >= n)
         return;
 
     // x-record index
-    size_t xDim = x.rows();
+    //size_t xDim = pay.rows();
     size_t xi = blockIdx.y * blockDim.y + threadIdx.y;
     if (xi >= xDim)
         return;
 
-    Real dt = t(ni, ti + 1) - t(ni, ti);
-    // FIXME: Use xi for dx
-    Real dx = x(ni, 1) - x(ni, 0);
-    Real inv_dx = 1. / dx;
-    Real inv_dx2 = inv_dx * inv_dx;
+    const auto i = ni + xi * n;
+    Real& v_ = v[i];
+    const Real& pay_ = pay[i];
+    if (v_ < pay_)
+        v_ = pay_;
+}
 
-    auto i = x.index(ni, xi);
-    auto j = t.index(ni, ti);
+// Calc B = [1 - θ dt 𝒜]
+template<typename Real>
+__global__
+void
+fillB_cuda(
+    const size_t n,
+    const size_t xDim,
+    const size_t ti,
+    const Real theta,
+
+    const Real* t,
+    const Real* x,
+    const Real* a0,
+    const Real* ax,
+    const Real* axx,
+
+    Real* bl,
+    Real* b,
+    Real* bu)
+{
+    // pde index
+    size_t ni = blockIdx.x * blockDim.x + threadIdx.x;
+    if (ni >= n)
+        return;
+
+    // x-record index
+    size_t xi = blockIdx.y * blockDim.y + threadIdx.y;
+    if (xi >= xDim)
+        return;
+
+    auto i = ni + xi * n;
+    auto j = ni + ti * n;
+
+    auto dt = t[j + n] - t[j];
+    // FIXME: Use xi for dx
+    auto dx = x[ni + 1 * n] - x[ni + 0 * n];
+    auto inv_dx = 1. / dx;
+    auto inv_dx2 = inv_dx * inv_dx;
+
     if (xi == 0) {
         bl[i] = 0;
         b[i] = 1 - theta * dt * (a0[j] - ax[j] * inv_dx);
@@ -60,238 +89,216 @@ fillB_g(
         b[i] = 1 - theta * dt * (a0[j] + ax[j] * inv_dx);
         bu[i] = 0;
     }
-}
-
-template<typename Real>
-kw::Error
-fillB(
-    const size_t nThreads,
-    const size_t xThreads,
-    const size_t ti,
-    const Real theta,
-    const kw::Array2d<kw::GPU, Real>& t,
-    const kw::Array2d<kw::GPU, Real>& x,
-    const kw::Array2d<kw::GPU, Real>& a0,
-    const kw::Array2d<kw::GPU, Real>& ax,
-    const kw::Array2d<kw::GPU, Real>& axx,
-    kw::Array2d<kw::GPU, Real>& bl,
-    kw::Array2d<kw::GPU, Real>& b,
-    kw::Array2d<kw::GPU, Real>& bu)
-{
-    auto bDim = static_cast<uint32_t>(x.cols());
-    auto xDim = static_cast<uint32_t>(x.rows());
-
-    dim3 block2d(nThreads, xThreads);
-    dim3 grid2d;
-    grid2d.x = (bDim + block2d.x - 1) / block2d.x;
-    grid2d.y = (xDim + block2d.y - 1) / block2d.y;
-
-    fillB_g<<<grid2d, block2d>>>(ti, theta, t, x, a0, ax, axx, bl, b, bu);
-
-    return "";
 };
-
-template
-kw::Error
-fillB(
-    const size_t nThreads,
-    const size_t xThreads,
-    const size_t ti,
-    const float theta,
-    const kw::Array2d<kw::GPU, float>& t,
-    const kw::Array2d<kw::GPU, float>& x,
-    const kw::Array2d<kw::GPU, float>& a0,
-    const kw::Array2d<kw::GPU, float>& ax,
-    const kw::Array2d<kw::GPU, float>& axx,
-    kw::Array2d<kw::GPU, float>& bl,
-    kw::Array2d<kw::GPU, float>& b,
-    kw::Array2d<kw::GPU, float>& bu);
-
-template
-kw::Error
-fillB(
-    const size_t nThreads,
-    const size_t xThreads,
-    const size_t ti,
-    const double theta,
-    const kw::Array2d<kw::GPU, double>& t,
-    const kw::Array2d<kw::GPU, double>& x,
-    const kw::Array2d<kw::GPU, double>& a0,
-    const kw::Array2d<kw::GPU, double>& ax,
-    const kw::Array2d<kw::GPU, double>& axx,
-    kw::Array2d<kw::GPU, double>& bl,
-    kw::Array2d<kw::GPU, double>& b,
-    kw::Array2d<kw::GPU, double>& bu);
-
 
 
 template<typename Real>
 __global__
 void
-fillW_g(
-    const int ti,
+fillW_cuda(
+    const size_t n,
+    const size_t xDim,
+    const size_t ti,
     const Real theta,
 
-    const kw::Array2d<kw::GPU, Real> t,
-    const kw::Array2d<kw::GPU, Real> x,
-    const kw::Array2d<kw::GPU, Real> a0,
-    const kw::Array2d<kw::GPU, Real> ax,
-    const kw::Array2d<kw::GPU, Real> axx,
+    const Real* t,
+    const Real* x,
+    const Real* a0,
+    const Real* ax,
+    const Real* axx,
 
-    const kw::Array2d<kw::GPU, Real> v,
-    kw::Array2d<kw::GPU, Real> w)
+    const Real* v,
+    Real* w)
 {
     // pde index
     size_t ni = blockIdx.x * blockDim.x + threadIdx.x;
-    if (ni >= x.cols())
+    if (ni >= n)
         return;
 
     // x-record index
-    size_t xDim = x.rows();
     size_t xi = blockIdx.y * blockDim.y + threadIdx.y;
     if (xi >= xDim)
         return;
 
-    Real dt = (1 - theta) * (t(ni, ti + 1) - t(ni, ti));
-    Real inv_dx = 1. / (x(ni, 1) - x(ni, 0));
-    Real inv_dx2 = inv_dx * inv_dx;
+    auto i = ni + xi * n;
+    auto j = ni + ti * n;
 
-    auto i = x.index(ni, xi);
-    auto j = a0.index(ni, ti);
+    auto dt = (1 - theta) * (t[j + 1 * n] - t[j + 0 * n]);
+    auto inv_dx = 1. / (x[ni + n] - x[ni]);
+    auto inv_dx2 = inv_dx * inv_dx;
+
     if (xi == 0)
     {
-        w[i] = (1 + dt * a0[j]) * v[i] + dt * (ax[j] * inv_dx) * (v(ni, xi + 1) - v(ni, xi));
+        w[i] = (1 + dt * a0[j]) * v[i] + dt * (ax[j] * inv_dx) * (v[i + n] - v[i]);
     }
     else if (xi < xDim - 1) {
         w[i] = (1 + dt * a0[j]) * v[i] +
-            dt * (0.5 * ax[j] * inv_dx) * (v(ni, xi + 1) - v(ni, xi - 1)) +
-            dt * (axx[j] * inv_dx2) * (v(ni, xi + 1) - 2 * v[i] + v(ni, xi - 1));
+            dt * (0.5 * ax[j] * inv_dx) * (v[i + n] - v[i - n]) +
+            dt * (axx[j] * inv_dx2) * (v[i + n] - 2 * v[i] + v[i - n]);
     }
     else {
-        w[i] = (1 + dt * a0[j]) * v[i] + dt * (ax[j] * inv_dx) * (v(ni, xi) - v(ni, xi - 1));
+        w[i] = (1 + dt * a0[j]) * v[i] + dt * (ax[j] * inv_dx) * (v[i] - v[i - n]);
     }
 }
 
 
-
 template<typename Real>
-__global__
-void
-adjustEarlyExercise_g(
-    const kw::Array2d<kw::GPU, Real> pay,
-    kw::Array2d<kw::GPU, Real> v)
-{
-    // pde index
-    size_t ni = blockIdx.x * blockDim.x + threadIdx.x;
-    if (ni >= v.cols())
-        return;
-
-    // x-record index
-    size_t xDim = v.rows();
-    size_t xi = blockIdx.y * blockDim.y + threadIdx.y;
-    if (xi >= xDim)
-        return;
-
-    auto& v_ = v(ni, xi);
-    auto& pay_ = pay(ni, xi);
-    if (v_ < pay_)
-        v_ = pay_;
-}
-
-template<typename Real>
-kw::Error
+Error
 adjustEarlyExercise(
-    const size_t nThreads,
-    const size_t xThreads,
-    const kw::Array2d<kw::GPU, Real>& pay,
-    kw::Array2d<kw::GPU, Real>& v)
+    const dim3 block2d,
+    const size_t bDim,
+    const size_t xDim,
+    const Real* pay,
+    Real* v)
 {
-    auto bCap = static_cast<uint32_t>(v.cols());
-    auto xDim = static_cast<uint32_t>(v.rows());
+    dim3 grid2d(
+        (bDim + block2d.x - 1) / block2d.x,
+        (xDim + block2d.y - 1) / block2d.y);
 
-    dim3 block2d(nThreads, xThreads);
-    dim3 grid2d;
-    grid2d.x = (bCap + block2d.x - 1) / block2d.x;
-    grid2d.y = (xDim + block2d.y - 1) / block2d.y;
-
-    adjustEarlyExercise_g<<<grid2d, block2d>>>(pay, v);
+    adjustEarlyExercise_cuda<<<grid2d, block2d>>>(bDim, xDim , pay, v);
+    cudaDeviceSynchronize();
 
     return "";
 }
 
-template
-kw::Error
-adjustEarlyExercise<float>(
-    const size_t nThreads,
-    const size_t xThreads,
-    const kw::Array2d<kw::GPU, float>& pay,
-    kw::Array2d<kw::GPU, float>& v);
-
-template
-kw::Error
-adjustEarlyExercise<double>(
-    const size_t nThreads,
-    const size_t xThreads,
-    const kw::Array2d<kw::GPU, double>& pay,
-    kw::Array2d<kw::GPU, double>& v);
-
-
 template<typename Real>
-kw::Error
-fillW(
-    const size_t nThreads,
-    const size_t xThreads,
+Error
+fillB(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
     const size_t ti,
     const Real theta,
-    const kw::Array2d<kw::GPU, Real>& t,
-    const kw::Array2d<kw::GPU, Real>& x,
-    const kw::Array2d<kw::GPU, Real>& a0,
-    const kw::Array2d<kw::GPU, Real>& ax,
-    const kw::Array2d<kw::GPU, Real>& axx,
-    const kw::Array2d<kw::GPU, Real>& v,
-    kw::Array2d<kw::GPU, Real>& w)
+    const Real* t,
+    const Real* x,
+    const Real* a0,
+    const Real* ax,
+    const Real* axx,
+    Real* bl,
+    Real* b,
+    Real* bu)
 {
-    auto bCap = static_cast<uint32_t>(x.cols());
-    auto xDim = static_cast<uint32_t>(x.rows());
+    dim3 grid2d(
+        (n + block2d.x - 1) / block2d.x,
+        (xDim + block2d.y - 1) / block2d.y);
 
-    dim3 block2d(nThreads, xThreads);
-    dim3 grid2d;
-    grid2d.x = (bCap + block2d.x - 1) / block2d.x;
-    grid2d.y = (xDim + block2d.y - 1) / block2d.y;
-
-    fillW_g<<<grid2d, block2d>>>(ti, theta, t, x, a0, ax, axx, v, w);
+    fillB_cuda<<<grid2d, block2d>>>(n, xDim, ti, theta, t, x, a0, ax, axx, bl, b, bu);
+    cudaDeviceSynchronize();
 
     return "";
 }
 
-template
-kw::Error
-fillW<float>(
-    const size_t nThreads,
-    const size_t xThreads,
+template<typename Real>
+Error
+fillW(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
     const size_t ti,
-    const float theta,
-    const kw::Array2d<kw::GPU, float>& t,
-    const kw::Array2d<kw::GPU, float>& x,
-    const kw::Array2d<kw::GPU, float>& a0,
-    const kw::Array2d<kw::GPU, float>& ax,
-    const kw::Array2d<kw::GPU, float>& axx,
-    const kw::Array2d<kw::GPU, float>& v,
-    kw::Array2d<kw::GPU, float>& w);
+    const Real theta,
+    const Real* t,
+    const Real* x,
+    const Real* a0,
+    const Real* ax,
+    const Real* axx,
+    const Real* v,
+    Real* w)
+{
+    dim3 grid2d(
+        (n + block2d.x - 1) / block2d.x,
+        (xDim + block2d.y - 1) / block2d.y);
+
+    fillW_cuda<<<grid2d, block2d>>>(n, xDim, ti, theta, t, x, a0, ax, axx, v, w);
+    cudaDeviceSynchronize();
+
+    return "";
+}
+
 
 template
 kw::Error
-fillW<double>(
-    const size_t nThreads,
-    const size_t xThreads,
+adjustEarlyExercise(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
+    const float* pay,
+    float* v);
+
+template
+kw::Error
+adjustEarlyExercise(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
+    const double* pay,
+    double* v);
+
+
+template
+kw::Error
+kw::fillB(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
+    const size_t ti,
+    const float theta,
+    const float* t,
+    const float* x,
+    const float* a0,
+    const float* ax,
+    const float* axx,
+    float* bl,
+    float* b,
+    float* bu);
+
+template
+kw::Error
+kw::fillB(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
     const size_t ti,
     const double theta,
-    const kw::Array2d<kw::GPU, double>& t,
-    const kw::Array2d<kw::GPU, double>& x,
-    const kw::Array2d<kw::GPU, double>& a0,
-    const kw::Array2d<kw::GPU, double>& ax,
-    const kw::Array2d<kw::GPU, double>& axx,
-    const kw::Array2d<kw::GPU, double>& v,
-    kw::Array2d<kw::GPU, double>& w);
+    const double* t,
+    const double* x,
+    const double* a0,
+    const double* ax,
+    const double* axx,
+    double* bl,
+    double* b,
+    double* bu);
+
+
+template
+kw::Error
+kw::fillW(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
+    const size_t ti,
+    const float theta,
+    const float* t,
+    const float* x,
+    const float* a0,
+    const float* ax,
+    const float* axx,
+    const float* v,
+    float* w);
+
+template
+kw::Error
+kw::fillW(
+    const dim3 block2d,
+    const size_t n,
+    const size_t xDim,
+    const size_t ti,
+    const double theta,
+    const double* t,
+    const double* x,
+    const double* a0,
+    const double* ax,
+    const double* axx,
+    const double* v,
+    double* w);
 
 }

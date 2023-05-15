@@ -24,9 +24,8 @@ protected:
             //    {100, 68.636}}},
         };
 
-        m_config.set("FD1D.GRID_SIZE_T", 2048);
-        m_config.set("FD1D.GRID_SIZE_X", 2048);
-        m_config.set("FD1D.BATCH_SIZE", m_testData.size());
+        m_config.set("FD1D.T_GRID_SIZE", 2048);
+        m_config.set("FD1D.X_GRID_SIZE", 2048);
     }
 
     std::vector<std::pair<kw::Option, std::vector<std::pair<real, real>>>>

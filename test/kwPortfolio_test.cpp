@@ -28,8 +28,8 @@ protected:
         SetUp() override
     {
         m_config.set("FD1D.THETA", 0.5);
-        m_config.set("FD1D.T_DIM", 1024);
-        m_config.set("FD1D.X_DIM", 1024);
+        m_config.set("FD1D.T_GRID_DIM", 1024);
+        m_config.set("FD1D.X_GRID_DIM", 1024);
 
         const auto srcPath = "test/portfolio.csv";
         if (auto error = kw::loadPortfolio(srcPath, m_portfolio); !error.empty())
@@ -61,16 +61,6 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
 
     ASSERT_EQ(engine->run(assets), "");
 
-    //kw::Fd1d<real> pricer;
-
-    //m_config.pdeCount = assets.size();
-    //ASSERT_EQ(pricer.allocate(m_config), "");
-
-    //std::vector<kw::Fd1dPde<real>> pdes;
-    //ASSERT_EQ(kw::Fd1dPdeFor(assets, m_config, pdes), "");
-
-    //ASSERT_EQ(pricer.solve(pdes), "");
-
     size_t i = 0;
     for (const auto& [asset, want]: m_portfolio)
     {
@@ -84,6 +74,4 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
 
         ++i;
     }
-
-    //ASSERT_EQ(pricer.free(), "");
 }
