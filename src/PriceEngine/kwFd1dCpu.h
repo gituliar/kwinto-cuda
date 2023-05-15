@@ -26,7 +26,7 @@ private:
 
 public:
     Error
-        init(const Config& config)
+        init(const Config& config) override
     {
         const auto tDim = config.get("FD1D.T_GRID_SIZE", 512);
         const auto xDim = config.get("FD1D.X_GRID_SIZE", 512);
@@ -102,19 +102,36 @@ public:
                 tGrid(i, j) = tMin + j * dt;
         }
 
-        // Init V-Grid, X-Grid
+        // Init X-Grid
+        // 
+        // https://github.com/lballabio/QuantLib/blob/master/ql/methods/finitedifferences/meshers/fdmblackscholesmesher.cpp
+        // https://github.com/lballabio/QuantLib/blob/master/ql/pricingengines/vanilla/fdblackscholesvanillaengine.cpp
+        // 
         for (auto i = 0; i < assets.size(); ++i) {
             const auto& asset = assets[i];
 
-            Real xMax = std::max<Real>(log(asset.k) + 10 * asset.z * sqrt(asset.t), log(5 * asset.k));
-            Real xMin = std::min<Real>(log(asset.k) - 10 * asset.z * sqrt(asset.t), log(0.2 * asset.k));
-            Real dx = (xMax - xMin) / (xDim - 1);
+            const Real density = 0.1;
+            const Real scale = 10;
 
+            const Real xMid = log(asset.s);
+            const Real xMin = xMid - scale * asset.z * sqrt(asset.t);
+            const Real xMax = xMid + scale * asset.z * sqrt(asset.t);
+
+            const Real yMin = std::asinh((xMin - xMid) / density);
+            const Real yMax = std::asinh((xMax - xMid) / density);
+
+            const Real dy = 1. / (xDim - 1);
             for (auto j = 0; j < xDim; ++j) {
-                Real xj = xMin + j * dx;
+                const Real yj = j * dy;
+                xGrid(i, j) = xMid + density * std::sinh(yMin * (1.0 - yj) + yMax * yj);
+            }
+        }
 
-                xGrid(i, j) = xj;
-
+        // Init V-Grid
+        for (auto i = 0; i < assets.size(); ++i) {
+            const auto& asset = assets[i];
+            for (auto j = 0; j < xDim; ++j) {
+                const auto& xj = xGrid(i, j);
                 if (asset.w == kParity::Put)
                     vGrid(i,j) = std::max<Real>(0, asset.k - std::exp(xj));
                 else

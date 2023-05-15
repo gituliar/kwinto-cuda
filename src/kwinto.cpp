@@ -27,7 +27,6 @@ Arguments:
     <portfolio>     Read options data from <portfolio> CSV file
 
 Options:
-    --amer          Include american options
     -b <num>        Price <num> options per batch [default: 128]
     --call          Include call options
     --cpu32         Run single-precision benchmark on CPU
@@ -35,14 +34,13 @@ Options:
     --cuda-n <num>  Run <num> threads per CUDA block over the n-dimension [default: 8]
     --cuda-x <num>  Run <num> threads per CUDA block over the x-dimension [default: 128]
     -e <num>        Reject option prices less than <num> from RRMS error stats [default: 0.5]
-    --euro          Include european options
     --gpu32         Run single-precision benchmark on GPU
     --gpu64         Run double-precision benchmark on GPU
     -n <num>        Run <num> batches (when 0 run all) [default: 0]
     --put           Include put options
-    -t <num>        Use <num> points for t-grid [default: 1024]
+    -t <num>        Use <num> points for t-grid [default: 512]
     -v              Show extra details, be verbose
-    -x <num>        Use <num> points for x-grid [default: 1024]
+    -x <num>        Use <num> points for x-grid [default: 512]
 
     -h --help       Print this screen
     --version       Print Kwinto version
@@ -60,8 +58,7 @@ kw::Error
     int nDevices;
     cudaGetDeviceCount(&nDevices);
 
-    for (int i = 0; i < nDevices; i++)
-    {
+    for (int i = 0; i < nDevices; i++) {
         cudaDeviceProp device;
         cudaGetDeviceProperties(&device, i);
 
@@ -103,15 +100,14 @@ template<typename Real>
 kw::Error
     benchPortfolio(
         const kw::Portfolio& portfolio,
-        kw::Config config,
-        size_t batchSize,
-        size_t batchCount,
-        double tolerance,
-        const std::string& label)
+        kw::Config           config,
+        size_t               batchSize,
+        size_t               batchCount,
+        double               tolerance,
+        const std::string&   label)
 {
     if (batchSize == 0)
         batchSize = portfolio.size();
-    config.set("FD1D.PDE_NUM", batchSize);
 
     if (batchCount == 0)
         batchCount = (portfolio.size() + batchSize - 1) / batchSize;
@@ -135,42 +131,34 @@ kw::Error
     size_t absDiffSize = 0, relDiffSize = 0;
     double mae = 0; // Maximum Absolute Error
     double mre = 0; // Maximum Relative Error
-    for (auto i = 0; i < batchCount; ++i)
-    {
+    for (auto i = 0; i < batchCount; ++i) {
         const auto& assets = batches[i];
 
-        if (auto error = engine->run(assets); !error.empty())
-            return "benchPortfolio: " + error;
-
         // 1. Solve
-        if (assets.size() == batchSize)
-        {
+        if (assets.size() == batchSize) {
+            // Record only full-size batches
             KW_BENCHMARK_RESUME(label);
         }
 
         if (auto error = engine->run(assets); !error.empty())
             return "benchPortfolio: " + error;
 
-        if (assets.size() == batchSize)
-        {
+        if (assets.size() == batchSize) {
             KW_BENCHMARK_PAUSE(label);
         }
 
         // 2. Collect statistics
-        for (auto j = 0; j < assets.size(); ++j)
-        {
+        for (auto j = 0; j < assets.size(); ++j) {
             const auto& asset = assets[j];
             const auto& price = portfolio.at(asset);
 
             double got;
-            if (auto error = engine->price(j, asset.s, got); !error.empty())
-            {
+            if (auto error = engine->price(j, asset.s, got); !error.empty()) {
                 std::cerr << error << std::endl;
                 continue;
             }
 
-            if (price >= tolerance)
-            {
+            if (price >= tolerance) {
                 double absDiff = std::abs(price - got);
                 double relDiff = absDiff / price;
 
@@ -188,6 +176,8 @@ kw::Error
         }
     }
 
+    KW_BENCHMARK_PRINT(label);
+
     {
         auto absDiffMean = absDiffSum1 / absDiffSize;
         auto rmse = std::sqrt(absDiffSum2 / absDiffSize - absDiffMean * absDiffMean);
@@ -195,19 +185,16 @@ kw::Error
         auto relDiffMean = relDiffSum1 / relDiffSize;
         auto rrmse = std::sqrt(relDiffSum2 / relDiffSize - relDiffMean * relDiffMean);
 
-        std::cout << "\nErrors for " << label << std::endl;
+        std::cout << "Errors for " << label << std::endl;
         std::cout << std::scientific;
-        std::cout << "    RMS error:  " << rmse << std::endl;
-        std::cout << "    RRMS error: " << rrmse << std::endl;
-        std::cout << "    MA error:   " << mae << std::endl;
-        std::cout << "    MR error:   " << mre << std::endl;
+        std::cout << "       RMSE : " << rmse << std::endl;
+        std::cout << "      RRMSE : " << rrmse << std::endl;
+        std::cout << "        MAE : " << mae << std::endl;
+        std::cout << "        MRE : " << mre << std::endl;
         std::cout << std::fixed;
-        std::cout << "    size:       " << absDiffSize << std::endl;
+        std::cout << "      total : " << absDiffSize << " options" << std::endl;
         std::cout << std::endl;
     }
-
-    //if (auto error = pricer.free(); !error.empty())
-    //    return "benchPortfolio: " + error;
 
     return "";
 }
@@ -218,8 +205,8 @@ kw::Error
     kw::Config config;
 
     config.set("FD1D.THETA", 0.5);
-    config.set("FD1D.T_DIM", args.at("-t").asLong());
-    config.set("FD1D.X_DIM", args.at("-x").asLong());
+    config.set("FD1D.T_GRID_SIZE", args.at("-t").asLong());
+    config.set("FD1D.X_GRID_SIZE", args.at("-x").asLong());
     config.set("FD1D.X_THREADS", args.at("--cuda-x").asLong());
     config.set("FD1D.N_THREADS", args.at("--cuda-n").asLong());
 
@@ -236,10 +223,10 @@ kw::Error
     kw::Portfolio portfolio;
     if (auto error = kw::loadPortfolio(args.at("<portfolio>").asString(), portfolio); !error.empty())
         return "cmdBench: " + error;
-    if (args.at("--amer").asBool() != args.at("--euro").asBool())
+    //if (args.at("--amer").asBool() != args.at("--euro").asBool())
     {
-        bool keepAmerican = args.at("--amer").asBool();
-        bool keepEuropean = args.at("--euro").asBool();
+        bool keepAmerican = true; // args.at("--amer").asBool();
+        bool keepEuropean = false; // args.at("--euro").asBool();
 
         for (auto ii = portfolio.begin(); ii != portfolio.end(); )
         {
@@ -250,8 +237,7 @@ kw::Error
                 ++ii;
         }
     }
-    if (args.at("--call").asBool() != args.at("--put").asBool())
-    {
+    if (args.at("--call").asBool() != args.at("--put").asBool()) {
         bool keepCall = args.at("--call").asBool();
         bool keepPut = args.at("--put").asBool();
 
@@ -274,9 +260,9 @@ kw::Error
     //}
 
     std::cout << "Portfolio" << std::endl;
-    std::cout << "    Assets:      " << portfolio.size() << std::endl;
+    std::cout << "    Assets     : " << portfolio.size() << std::endl;
     std::cout << "    Batch count: " << batchCount << std::endl;
-    std::cout << "    Batch size:  " << batchSize << std::endl;
+    std::cout << "    Batch size : " << batchSize << std::endl;
     std::cout << std::endl;
 
     bool runAll = !args.at("--cpu32").asBool() && !args.at("--cpu64").asBool() &&
@@ -289,37 +275,30 @@ kw::Error
         const auto label = "Fd1d<float>::solve";
         if (auto error = benchPortfolio<float>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
-        KW_BENCHMARK_PRINT(label);
     }
 
-    if (runAll || args.at("--gpu32").asBool())
-    {
+    if (runAll || args.at("--gpu32").asBool()) {
         config.set("PRICE_ENGINE.MODE", "FD1D_GPU32");
 
         const auto label = "Fd1d_Gpu<float>::solve";
         if (auto error = benchPortfolio<float>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
-        KW_BENCHMARK_PRINT(label);
     }
 
-    if (runAll || args.at("--cpu64").asBool())
-    {
+    if (runAll || args.at("--cpu64").asBool()) {
         config.set("PRICE_ENGINE.MODE", "FD1D_CPU64");
 
         const auto label = "Fd1d<double>::solve";
         if (auto error = benchPortfolio<double>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
-        KW_BENCHMARK_PRINT(label);
     }
 
-    if (runAll || args.at("--gpu64").asBool())
-    {
+    if (runAll || args.at("--gpu64").asBool()) {
         config.set("PRICE_ENGINE.MODE", "FD1D_GPU64");
 
         const auto label = "Fd1d_Gpu<double>::solve";
         if (auto error = benchPortfolio<double>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
             return "cmdBench: " + error;
-        KW_BENCHMARK_PRINT(label);
     }
 
     return "";
@@ -335,8 +314,7 @@ int main(int argc, char** argv)
         true,
         "kwinto v0.1.0");
 
-    if (args.at("-v").asBool())
-    {
+    if (args.at("-v").asBool()) {
         std::cout << "Command-Line Arguments" << std::endl;
         for (auto const& arg : args) {
             std::cout << "    " << arg.first << ": " << arg.second << std::endl;
@@ -349,8 +327,7 @@ int main(int argc, char** argv)
     if (args["bench"])
         error = cmdBench(args);
 
-    if (!error.empty())
-    {
+    if (!error.empty()) {
         std::cerr << error << std::endl;
         return 1;
     }

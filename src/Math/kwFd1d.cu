@@ -23,16 +23,13 @@ adjustEarlyExercise_cuda(
         return;
 
     // x-record index
-    //size_t xDim = pay.rows();
     size_t xi = blockIdx.y * blockDim.y + threadIdx.y;
     if (xi >= xDim)
         return;
 
     const auto i = ni + xi * n;
-    Real& v_ = v[i];
-    const Real& pay_ = pay[i];
-    if (v_ < pay_)
-        v_ = pay_;
+    if (v[i] < pay[i])
+        v[i] = pay[i];
 }
 
 // Calc B = [1 - θ dt 𝒜]
@@ -50,7 +47,9 @@ fillB_cuda(
     const Real* a0,
     const Real* ax,
     const Real* axx,
+    const Real* v,
 
+    Real* w,
     Real* bl,
     Real* b,
     Real* bu)
@@ -65,81 +64,46 @@ fillB_cuda(
     if (xi >= xDim)
         return;
 
-    auto i = ni + xi * n;
-    auto j = ni + ti * n;
+    const auto i = ni + xi * n;
+    const auto j = ni + ti * n;
 
-    auto dt = t[j + n] - t[j];
-    // FIXME: Use xi for dx
-    auto dx = x[ni + 1 * n] - x[ni + 0 * n];
-    auto inv_dx = 1. / dx;
-    auto inv_dx2 = inv_dx * inv_dx;
+    const Real dt = t[j + n] - t[j];
 
     if (xi == 0) {
+        const Real inv_dx = 1. / (x[i + n] - x[i]);
+
         bl[i] = 0;
-        b[i] = 1 - theta * dt * (a0[j] - ax[j] * inv_dx);
-        bu[i] = -theta * dt * (ax[j] * inv_dx);
+        b[i] = 1 - theta * dt * (a0[j] - inv_dx * ax[j]);
+        bu[i] = -theta * dt * (inv_dx * ax[j]);
+
+        w[i] = v[i] + (1 - theta) * dt * (a0[j] * v[i] + (inv_dx * ax[j]) * (v[i + n] - v[i]));
     }
     else if (xi < xDim - 1) {
-        bl[i] = -theta * dt * (axx[j] * inv_dx2 - 0.5 * ax[j] * inv_dx);
-        b[i] = 1 - theta * dt * (a0[j] - 2 * axx[j] * inv_dx2);
-        bu[i] = -theta * dt * (axx[j] * inv_dx2 + 0.5 * ax[j] * inv_dx);
+        const Real inv_dxu = 1. / (x[i + n] - x[i]);
+        const Real inv_dxm = 1. / (x[i + n] - x[i - n]);
+        const Real inv_dxd = 1. / (x[i] - x[i - n]);
+
+        const Real inv_dx2u = (Real)(2.) * inv_dxu * inv_dxm;
+        const Real inv_dx2m = (Real)(2.) * inv_dxd * inv_dxu;
+        const Real inv_dx2d = (Real)(2.) * inv_dxd * inv_dxm;
+
+        bl[i] = -theta * dt * (-inv_dxm * ax[j] + inv_dx2d * axx[j]);
+        b[i] = 1 - theta * dt * (a0[j] - inv_dx2m * axx[j]);
+        bu[i] = -theta * dt * (inv_dxm * ax[j] + inv_dx2u * axx[j]);
+
+        w[i] = v[i] + (1 - theta) * dt * (a0[j] * v[i] + (ax[j] * inv_dxm) * (v[i + n] - v[i - n]) +
+            (axx[j]) * (inv_dx2u * v[i + n] - inv_dx2m * v[i] + inv_dx2d * v[i - n]));
     }
     else {
-        bl[i] = -theta * dt * (-ax[j] * inv_dx);
-        b[i] = 1 - theta * dt * (a0[j] + ax[j] * inv_dx);
+        const Real inv_dx = 1. / (x[i] - x[i - n]);
+
+        bl[i] = -theta * dt * (-inv_dx * ax[j]);
+        b[i] = 1 - theta * dt * (a0[j] + inv_dx * ax[j]);
         bu[i] = 0;
+
+        w[i] = v[i] + (1 - theta) * dt * (a0[j] * v[i] + (inv_dx * ax[j]) * (v[i] - v[i - n]));
     }
 };
-
-
-template<typename Real>
-__global__
-void
-fillW_cuda(
-    const size_t n,
-    const size_t xDim,
-    const size_t ti,
-    const Real theta,
-
-    const Real* t,
-    const Real* x,
-    const Real* a0,
-    const Real* ax,
-    const Real* axx,
-
-    const Real* v,
-    Real* w)
-{
-    // pde index
-    size_t ni = blockIdx.x * blockDim.x + threadIdx.x;
-    if (ni >= n)
-        return;
-
-    // x-record index
-    size_t xi = blockIdx.y * blockDim.y + threadIdx.y;
-    if (xi >= xDim)
-        return;
-
-    auto i = ni + xi * n;
-    auto j = ni + ti * n;
-
-    auto dt = (1 - theta) * (t[j + 1 * n] - t[j + 0 * n]);
-    auto inv_dx = 1. / (x[ni + n] - x[ni]);
-    auto inv_dx2 = inv_dx * inv_dx;
-
-    if (xi == 0)
-    {
-        w[i] = (1 + dt * a0[j]) * v[i] + dt * (ax[j] * inv_dx) * (v[i + n] - v[i]);
-    }
-    else if (xi < xDim - 1) {
-        w[i] = (1 + dt * a0[j]) * v[i] +
-            dt * (0.5 * ax[j] * inv_dx) * (v[i + n] - v[i - n]) +
-            dt * (axx[j] * inv_dx2) * (v[i + n] - 2 * v[i] + v[i - n]);
-    }
-    else {
-        w[i] = (1 + dt * a0[j]) * v[i] + dt * (ax[j] * inv_dx) * (v[i] - v[i - n]);
-    }
-}
 
 
 template<typename Real>
@@ -165,34 +129,7 @@ template<typename Real>
 Error
 fillB(
     const dim3 block2d,
-    const size_t n,
-    const size_t xDim,
-    const size_t ti,
-    const Real theta,
-    const Real* t,
-    const Real* x,
-    const Real* a0,
-    const Real* ax,
-    const Real* axx,
-    Real* bl,
-    Real* b,
-    Real* bu)
-{
-    dim3 grid2d(
-        (n + block2d.x - 1) / block2d.x,
-        (xDim + block2d.y - 1) / block2d.y);
-
-    fillB_cuda<<<grid2d, block2d>>>(n, xDim, ti, theta, t, x, a0, ax, axx, bl, b, bu);
-    cudaDeviceSynchronize();
-
-    return "";
-}
-
-template<typename Real>
-Error
-fillW(
-    const dim3 block2d,
-    const size_t n,
+    const size_t bDim,
     const size_t xDim,
     const size_t ti,
     const Real theta,
@@ -202,13 +139,16 @@ fillW(
     const Real* ax,
     const Real* axx,
     const Real* v,
-    Real* w)
+    Real* w,
+    Real* bl,
+    Real* b,
+    Real* bu)
 {
     dim3 grid2d(
-        (n + block2d.x - 1) / block2d.x,
+        (bDim + block2d.x - 1) / block2d.x,
         (xDim + block2d.y - 1) / block2d.y);
 
-    fillW_cuda<<<grid2d, block2d>>>(n, xDim, ti, theta, t, x, a0, ax, axx, v, w);
+    fillB_cuda<<<grid2d, block2d>>>(bDim, xDim, ti, theta, t, x, a0, ax, axx, v, w, bl, b, bu);
     cudaDeviceSynchronize();
 
     return "";
@@ -219,7 +159,7 @@ template
 kw::Error
 adjustEarlyExercise(
     const dim3 block2d,
-    const size_t n,
+    const size_t bDim,
     const size_t xDim,
     const float* pay,
     float* v);
@@ -228,7 +168,7 @@ template
 kw::Error
 adjustEarlyExercise(
     const dim3 block2d,
-    const size_t n,
+    const size_t bDim,
     const size_t xDim,
     const double* pay,
     double* v);
@@ -238,42 +178,7 @@ template
 kw::Error
 kw::fillB(
     const dim3 block2d,
-    const size_t n,
-    const size_t xDim,
-    const size_t ti,
-    const float theta,
-    const float* t,
-    const float* x,
-    const float* a0,
-    const float* ax,
-    const float* axx,
-    float* bl,
-    float* b,
-    float* bu);
-
-template
-kw::Error
-kw::fillB(
-    const dim3 block2d,
-    const size_t n,
-    const size_t xDim,
-    const size_t ti,
-    const double theta,
-    const double* t,
-    const double* x,
-    const double* a0,
-    const double* ax,
-    const double* axx,
-    double* bl,
-    double* b,
-    double* bu);
-
-
-template
-kw::Error
-kw::fillW(
-    const dim3 block2d,
-    const size_t n,
+    const size_t bDim,
     const size_t xDim,
     const size_t ti,
     const float theta,
@@ -283,13 +188,16 @@ kw::fillW(
     const float* ax,
     const float* axx,
     const float* v,
-    float* w);
+    float* w,
+    float* bl,
+    float* b,
+    float* bu);
 
 template
 kw::Error
-kw::fillW(
+kw::fillB(
     const dim3 block2d,
-    const size_t n,
+    const size_t bDim,
     const size_t xDim,
     const size_t ti,
     const double theta,
@@ -299,6 +207,9 @@ kw::fillW(
     const double* ax,
     const double* axx,
     const double* v,
-    double* w);
+    double* w,
+    double* bl,
+    double* b,
+    double* bu);
 
 }

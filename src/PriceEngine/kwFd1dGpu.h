@@ -27,7 +27,7 @@ private:
 
 public:
     Error
-        init(const Config& config)
+        init(const Config& config) override
     {
         const auto tDim = config.get("FD1D.T_GRID_SIZE", 512);
         const auto xDim = config.get("FD1D.X_GRID_SIZE", 512);

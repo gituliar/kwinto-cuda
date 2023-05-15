@@ -23,7 +23,7 @@ struct Option
     friend bool operator<(const Option& l, const Option& r)
     {
         return std::tie(l.t, l.k, l.z, l.q, l.r, l.s, l.e, l.w)
-            < std::tie(r.t, r.k, r.z, r.q, r.r, l.s, r.e, r.w);
+            < std::tie(r.t, r.k, r.z, r.q, r.r, r.s, r.e, r.w);
     };
 };
 

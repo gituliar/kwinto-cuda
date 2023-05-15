@@ -17,7 +17,7 @@ def price(e = True, k = 100, q = 0.0, r = 0.05, s = 100, t = 1, w = -1, z = 0.2)
     bsm_process = ql.BlackScholesMertonProcess( spot_handle, dividend_yield, flat_ts, flat_vol_ts )
 
     payoff = ql.PlainVanillaPayoff( ql.Option.Put if w < 0 else ql.Option.Call, k )
-    maturity = anchor + ql.Period(int(t * 360), ql.Days)
+    maturity = anchor + ql.Period(round(t * 360), ql.Days)
 
     if e:
         engine = ql.QdFpAmericanEngine( bsm_process, ql.QdFpAmericanEngine.highPrecisionScheme() )
@@ -61,11 +61,11 @@ def vega(**kwargs):
 
 def generate(fo):
     e = [True, False]
-    k = [25, 50, 80, 90, 100, 110, 120, 150, 175, 200]
-    q = [0.02, 0.04, 0.06, 0.08, 0.1]
+    k = [100]
+    q = [0, 0.04, 0.08, 0.12]
     r = [0.02, 0.04, 0.06, 0.08, 0.1]
-    s = 100
-    t = [0.125, 0.25, 0.5, 0.75, 1, 2, 3]
+    s = [25, 50, 80, 90, 100, 110, 120, 150, 175, 200]
+    t = [1./12, 0.25, 0.5, 0.75, 1]
     w = [-1, 1]
     z = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
 
@@ -74,9 +74,9 @@ def generate(fo):
         return f'{x_:.6f}'.rstrip('0')
 
     fo.write('time_to_maturity,spot,strike,volatility,interest_rate,dividend_rate,parity,early_exercise,price,delta,gamma,vega,theta,rgo\n')
-    for state in product(t, k, z, r, q, w, e):
-        t, k, z, r, q, w, e = state
-        kwargs = {'e': e, 'q': q, 'r': r, 's': s, 'k': k, 't': t, 'w': w, 'z':z}
+    for state in product(t, s, k, z, r, q, w, e):
+        t, s, k, z, r, q, w, e = state
+        kwargs = {'e': e, 'q': q, 'r': r, 's': s, 'k': k, 't': t, 'w': w, 'z': z}
 
         price_ = to_string(price(**kwargs))
         delta_ = to_string(delta(**kwargs))

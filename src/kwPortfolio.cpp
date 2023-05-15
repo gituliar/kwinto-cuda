@@ -64,6 +64,7 @@ kw::loadPortfolio(const std::string& srcPath_, Portfolio& portfolio)
         kw::fromString(vals[t], asset.t);
         kw::fromString(vals[s], asset.s);
         kw::fromString(vals[z], asset.z);
+        asset.e = vals[e] == "a";
         asset.w = vals[w] == "c" ? kw::kParity::Call : kw::kParity::Put;
 
         double price;

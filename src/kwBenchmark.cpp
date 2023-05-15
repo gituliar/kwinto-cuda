@@ -36,14 +36,14 @@ kw::BenchmarkRecord::print(const std::string& label, bool details)
     }
     const auto avgTime = m_avgTime / m_n;
     const auto stdTime = std::sqrt(m_stdTime / m_n - avgTime * avgTime);
-    std::cout << "    funCall: " << m_n << " times" << std::endl;
-    std::cout << "    totTime: " << m_avgTime << timeUnits << std::endl;
+    std::cout << "    funCall : " << m_n << " times" << std::endl;
+    std::cout << "    totTime : " << m_avgTime << " " << timeUnits << std::endl;
     if (details)
     {
-        std::cout << "    avgTime: " << avgTime << timeUnits << std::endl;
-        std::cout << "    stdTime: " << stdTime << timeUnits << std::endl;
-        std::cout << "    minTime: " << m_minTime << timeUnits << std::endl;
-        std::cout << "    maxTime: " << m_maxTime << timeUnits << std::endl;
+        std::cout << "    avgTime : " << avgTime << " " << timeUnits << std::endl;
+        std::cout << "    stdTime : " << stdTime << " " << timeUnits << std::endl;
+        std::cout << "    minTime : " << m_minTime << " " << timeUnits << std::endl;
+        std::cout << "    maxTime : " << m_maxTime << " " << timeUnits << std::endl;
     }
     std::cout << std::endl;
 }
@@ -58,7 +58,6 @@ kw::BenchmarkRecord::pause()
     }
 
     const auto dt = (std::chrono::steady_clock::now() - m_last).count() * 1e-6;
-    //const auto dt = (std::clock() - m_lastClock) * 1.0;
 
     m_avgTime += dt;
     m_stdTime += dt * dt;
@@ -80,7 +79,6 @@ kw::BenchmarkRecord::resume()
     }
 
     m_last = std::chrono::steady_clock::now();
-    //m_lastClock = std::clock();
 
     m_active = true;
 }

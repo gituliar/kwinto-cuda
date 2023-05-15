@@ -78,6 +78,9 @@ kw::Fd1d<Real>::solveOne(
         Real dt = tGrid(ni, ti + 1) - tGrid(ni, ti);
         {
             const auto xi = 0;
+            //const auto i = ni + xi * n;
+            //const auto j = ni + ti * n;
+
             const Real inv_dx = static_cast<Real>(1.) / (xGrid(ni, xi + 1) - xGrid(ni, xi));
 
             m_bl(ni, xi) = 0;
@@ -89,16 +92,21 @@ kw::Fd1d<Real>::solveOne(
         }
 
         for (auto xi = 1; xi < m_xDim - 1; ++xi) {
-            const Real inv_dx = static_cast<Real>(1.) / (xGrid(ni, xi) - xGrid(ni, xi - 1));
-            const Real inv_dx2 = inv_dx * inv_dx;
+            const Real inv_dxu = (Real)(1.) / (xGrid(ni, xi + 1) - xGrid(ni, xi));
+            const Real inv_dxm = (Real)(1.) / (xGrid(ni, xi + 1) - xGrid(ni, xi - 1));
+            const Real inv_dxd = (Real)(1.) / (xGrid(ni, xi) - xGrid(ni, xi - 1));
 
-            m_bl(ni, xi) = -m_theta * dt * (inv_dx2 * m_axx(ni, ti) - inv_dx / 2 * m_ax(ni, ti));
-            m_b(ni, xi) = 1 - m_theta * dt * (m_a0(ni, ti) - 2 * inv_dx2 * m_axx(ni, ti));
-            m_bu(ni, xi) = -m_theta * dt * (inv_dx2 * m_axx(ni, ti) + inv_dx / 2 * m_ax(ni, ti));
+            const Real inv_dx2u = (Real)(2.) * inv_dxu * inv_dxm;
+            const Real inv_dx2m = (Real)(2.) * inv_dxd * inv_dxu;
+            const Real inv_dx2l = (Real)(2.) * inv_dxd * inv_dxm;
+
+            m_bl(ni, xi) = -m_theta * dt * (-inv_dxm * m_ax(ni, ti) + inv_dx2l * m_axx(ni, ti));
+            m_b(ni, xi) = 1 - m_theta * dt * (m_a0(ni, ti) - inv_dx2m * m_axx(ni, ti));
+            m_bu(ni, xi) = -m_theta * dt * (inv_dxm * m_ax(ni, ti) + inv_dx2u * m_axx(ni, ti));
 
             m_w(ni, xi) = (1 + (1 - m_theta) * dt * m_a0(ni, ti)) * m_v(ni, xi) +
-                (1 - m_theta) * dt * (m_ax(ni, ti) * inv_dx / 2) * (m_v(ni, xi + 1) - m_v(ni, xi - 1)) +
-                (1 - m_theta) * dt * (m_axx(ni, ti) * inv_dx2) * (m_v(ni, xi + 1) - 2 * m_v(ni, xi) + m_v(ni, xi - 1));
+                (1 - m_theta) * dt * (m_ax(ni, ti) * inv_dxm) * (m_v(ni, xi + 1) - m_v(ni, xi - 1)) +
+                (1 - m_theta) * dt * (m_axx(ni, ti)) * (inv_dx2u * m_v(ni, xi + 1) - inv_dx2m * m_v(ni, xi) + inv_dx2l * m_v(ni, xi - 1));
         }
 
         {
@@ -144,10 +152,10 @@ kw::Fd1d<Real>::value(
 {
     Real x = std::log(s);
 
-    const auto bCap = xGrid.cols();
+    const auto n = xGrid.cols();
     const auto xDim = xGrid.rows();
 
-    if (ni >= bCap)
+    if (ni >= n)
         return "Fd1d::value: Solution index out of range";
 
     size_t xi = 0;
@@ -253,16 +261,12 @@ kw::Fd1d_Gpu<Real>::solve(
     m__w.resize(n, m_xDim);
 
     cusparseStatus_t status;
-    for (auto ti = m_tDim - 2; ti > 0; --ti) {
-        // Step 1a
+    for (int ti = m_tDim - 2; ti >= 0; --ti) {
+        // Step 1
         //   - Calc B = [1 - θ dt 𝒜]
-        fillB(m_block2d, n, m_xDim, ti, m_theta, m__t.buf(), m__x.buf(), m__a0.buf(), m__ax.buf(), m__axx.buf(),
-            m__bl.buf(), m__b.buf(), m__bu.buf());
-
-        // Step 1b
         //   - Calc W = [1 + (1 - θ) dt 𝒜] V(t + dt)
-        fillW(m_block2d, n, m_xDim, ti, m_theta, m__t.buf(), m__x.buf(), m__a0.buf(), m__ax.buf(), m__axx.buf(),
-            m__v.buf(), m__w.buf());
+        fillB(m_block2d, n, m_xDim, ti, m_theta, m__t.buf(), m__x.buf(), m__a0.buf(), m__ax.buf(), m__axx.buf(),
+            m__v.buf(), m__w.buf(), m__bl.buf(), m__b.buf(), m__bu.buf());
 
         // Step 2a
         //   - Solve B X = W (places X in W)
@@ -350,10 +354,10 @@ kw::Fd1d_Gpu<Real>::value(
 {
     Real x = std::log(s);
 
-    const auto bCap = xGrid.cols();
+    const auto n = xGrid.cols();
     const auto xDim = xGrid.rows();
 
-    if (ni >= bCap)
+    if (ni >= n)
         return "Fd1d::value: Solution index out of range";
 
     size_t xi = 0;

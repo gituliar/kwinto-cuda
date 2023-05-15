@@ -10,24 +10,16 @@ namespace kw
 class BenchmarkRecord
 {
 private:
-    size_t
-        m_n = 0;
+    size_t  m_n = 0;
 
-    double
-        m_avgTime = 0;
-    double
-        m_maxTime = 0;
-    double
-        m_minTime = 0;
-    double
-        m_stdTime = 0;
+    double  m_avgTime = 0;
+    double  m_maxTime = 0;
+    double  m_minTime = 0;
+    double  m_stdTime = 0;
 
-    bool
-        m_active = false;
+    bool    m_active = false;
     std::chrono::time_point<std::chrono::steady_clock>
-        m_last;
-    std::clock_t
-        m_lastClock;
+            m_last;
 
 public:
     void

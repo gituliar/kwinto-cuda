@@ -24,8 +24,8 @@ protected:
             //    {100, 68.636}}},
         };
 
-        m_config.set("FD1D.T_GRID_SIZE", 2048);
-        m_config.set("FD1D.X_GRID_SIZE", 2048);
+        m_config.set("FD1D.T_GRID_SIZE", 512);
+        m_config.set("FD1D.X_GRID_SIZE", 512);
     }
 
     std::vector<std::pair<kw::Option, std::vector<std::pair<real, real>>>>
@@ -55,7 +55,7 @@ TEST_F(kwFd1dTest, Fd1dCpu)
         {
             real got;
             ASSERT_EQ(engine->price(i, s, got), "");
-            EXPECT_NEAR(want, got, 2e-2);
+            EXPECT_NEAR(want, got, 1.3e-3);
         }
     }
 }
@@ -80,7 +80,7 @@ TEST_F(kwFd1dTest, Fd1dGpu)
         {
             real got;
             ASSERT_EQ(engine->price(i, s, got), "");
-            EXPECT_NEAR(want, got, 2e-2);
+            EXPECT_NEAR(want, got, 1.3e-3);
         }
     }
 }

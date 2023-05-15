@@ -190,30 +190,14 @@ Error
         const size_t ti,
         const Real theta,
         const Real* t,
-        const Real* a0,
-        const Real* ax,
-        const Real* axx,
-        const Real* x,
-        Real* bl,
-        Real* b,
-        Real* bu
-    );
-
-template<typename Real>
-Error
-    fillW(
-        const dim3 block2d,
-        const size_t n,
-        const size_t xDim,
-        const size_t ti,
-        const Real theta,
-        const Real* t,
         const Real* x,
         const Real* a0,
         const Real* ax,
         const Real* axx,
         const Real* v,
-        Real* w
+        Real* w,
+        Real* bl,
+        Real* b,
+        Real* bu
     );
-
 }
