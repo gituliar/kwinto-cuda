@@ -13,6 +13,7 @@
 #include "Utils/kwConfig.h"
 #include "kwTime.h"
 #include "kwPortfolio.h"
+#include "kwVersion.h"
 
 
 namespace kw {
@@ -49,7 +50,6 @@ Options:
 }
 
 using Args = std::map<std::string, docopt::value>;
-
 
 
 kw::Error
@@ -308,11 +308,15 @@ kw::Error
 
 int main(int argc, char** argv)
 {
+    auto version = "kwinto-cuda " + kw::Version::GIT_DESCRIBE + " (" + kw::Version::BUILD_DATE + ")";
+
+
     auto args = docopt::docopt(
         kw::usage,
         { argv + 1, argv + argc },
         true,
-        "kwinto v0.1.0");
+        version);
+    std::cout << version << '\n' << std::endl;
 
     if (args.at("-v").asBool()) {
         std::cout << "Command-Line Arguments" << std::endl;
