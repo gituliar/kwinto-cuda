@@ -1,0 +1,99 @@
+[sasha@p14s kwinto-cuda]$ make bench
+./out/linux-release/src/kwinto bench test/portfolio.csv -v --put
+Command-Line Arguments
+    --call: false
+    --cpu32: false
+    --cpu64: false
+    --cuda-n: "8"
+    --cuda-x: "128"
+    --gpu32: false
+    --gpu64: false
+    --put: true
+    -b: "128"
+    -e: "0.5"
+    -n: "0"
+    -t: "512"
+    -v: true
+    -x: "512"
+    <portfolio>: "test/portfolio.csv"
+    bench: true
+
+Devices Info #0
+    Name:                 Quadro P520
+    Integrated:           0
+
+    Total SM:             3
+    Clock Rate:           1493 MHz
+    32-bit Regs (per SM): 65536
+    Max Blocks (per SM):  32
+    Max Threads (per SM): 2048
+
+    Total Memory:         2047 MB
+    Memory Clock Rate:    3004 MHz
+    Memory Bus Width:     64 bits
+    Peak Bandwidth:       48.064 GB/s
+
+Portfolio
+    Assets     : 6000
+    Batch count: 0
+    Batch size : 128
+
+Benchmark for Fd1d<float>::solve
+    funCall : 46 times
+    totTime : 34488.543 ms
+    avgTime : 749.751 ms
+    stdTime : 60.755 ms
+    minTime : 664.398 ms
+    maxTime : 888.008 ms
+
+Errors for Fd1d<float>::solve
+       RMSE : 2.071e-03
+      RRMSE : 9.943e-05
+        MAE : 2.372e-02
+        MRE : 1.131e-03
+      total : 4495 options
+
+Benchmark for Fd1d_Gpu<float>::solve
+    funCall : 46 times
+    totTime : 97309.414 ms
+    avgTime : 2115.422 ms
+    stdTime : 792.730 ms
+    minTime : 390.709 ms
+    maxTime : 2945.335 ms
+
+Errors for Fd1d_Gpu<float>::solve
+       RMSE : 1.584e-03
+      RRMSE : 9.123e-05
+        MAE : 2.505e-02
+        MRE : 1.116e-03
+      total : 4495 options
+
+Benchmark for Fd1d<double>::solve
+    funCall : 46 times
+    totTime : 28947.016 ms
+    avgTime : 629.283 ms
+    stdTime : 47.513 ms
+    minTime : 570.249 ms
+    maxTime : 779.482 ms
+
+Errors for Fd1d<double>::solve
+       RMSE : 5.407e-04
+      RRMSE : 8.064e-05
+        MAE : 4.331e-03
+        MRE : 1.129e-03
+      total : 4495 options
+
+Benchmark for Fd1d_Gpu<double>::solve
+    funCall : 46 times
+    totTime : 117385.879 ms
+    avgTime : 2551.867 ms
+    stdTime : 1804.544 ms
+    minTime : 981.636 ms
+    maxTime : 7616.216 ms
+
+Errors for Fd1d_Gpu<double>::solve
+       RMSE : 5.407e-04
+      RRMSE : 8.064e-05
+        MAE : 4.331e-03
+        MRE : 1.129e-03
+      total : 4495 options
