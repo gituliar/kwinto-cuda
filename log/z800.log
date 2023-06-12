@@ -1,4 +1,6 @@
-sasha@z800:~/src/kwinto-cuda$ ./out/linux-release/src/kwinto bench test/portfolio.csv -v --put
+./out/linux-release/src/kwinto bench test/portfolio.csv -v --put
+kwinto-cuda v0.1.0+ (2023-06-12 21:50:09 +0200)
+
 Command-Line Arguments
     --call: false
     --cpu32: false
@@ -39,11 +41,11 @@ Portfolio
 
 Benchmark for Fd1d<float>::solve
     funCall : 46 times
-    totTime : 63744.928 ms
-    avgTime : 1385.759 ms
-    stdTime : 137.659 ms
-    minTime : 1198.557 ms
-    maxTime : 1685.668 ms
+    totTime : 64829.770 ms
+    avgTime : 1409.343 ms
+    stdTime : 136.148 ms
+    minTime : 1223.161 ms
+    maxTime : 1706.675 ms
 
 Errors for Fd1d<float>::solve
        RMSE : 2.071e-03
@@ -54,11 +56,11 @@ Errors for Fd1d<float>::solve
 
 Benchmark for Fd1d_Gpu<float>::solve
     funCall : 46 times
-    totTime : 16567.493 ms
-    avgTime : 360.163 ms
-    stdTime : 26.976 ms
-    minTime : 330.724 ms
-    maxTime : 430.007 ms
+    totTime : 16448.463 ms
+    avgTime : 357.575 ms
+    stdTime : 27.273 ms
+    minTime : 327.976 ms
+    maxTime : 428.338 ms
 
 Errors for Fd1d_Gpu<float>::solve
        RMSE : 1.584e-03
@@ -69,11 +71,11 @@ Errors for Fd1d_Gpu<float>::solve
 
 Benchmark for Fd1d<double>::solve
     funCall : 46 times
-    totTime : 56979.349 ms
-    avgTime : 1238.681 ms
-    stdTime : 7.589 ms
-    minTime : 1205.798 ms
-    maxTime : 1242.764 ms
+    totTime : 57476.629 ms
+    avgTime : 1249.492 ms
+    stdTime : 10.071 ms
+    minTime : 1201.083 ms
+    maxTime : 1255.560 ms
 
 Errors for Fd1d<double>::solve
        RMSE : 5.407e-04
@@ -84,11 +86,11 @@ Errors for Fd1d<double>::solve
 
 Benchmark for Fd1d_Gpu<double>::solve
     funCall : 46 times
-    totTime : 24499.492 ms
-    avgTime : 532.598 ms
-    stdTime : 43.645 ms
-    minTime : 515.012 ms
-    maxTime : 673.523 ms
+    totTime : 24401.490 ms
+    avgTime : 530.467 ms
+    stdTime : 42.298 ms
+    minTime : 513.199 ms
+    maxTime : 655.332 ms
 
 Errors for Fd1d_Gpu<double>::solve
        RMSE : 5.407e-04
@@ -96,3 +98,4 @@ Errors for Fd1d_Gpu<double>::solve
         MAE : 4.331e-03
         MRE : 1.129e-03
       total : 4495 options
+
