@@ -32,7 +32,7 @@ public:
         const Real r = asset.r;
         const Real t = asset.t;
         const Real z = asset.z;
-        const auto w = (asset.w == kParity::Put) ? -1 : 1;
+        const auto w = (asset.w == Parity::Put) ? -1 : 1;
 
         Real zt = z * std::sqrt(t);
         Real d1 = 1 / zt * (std::log(s / k) + (r - q + 0.5 * z * z) * t);

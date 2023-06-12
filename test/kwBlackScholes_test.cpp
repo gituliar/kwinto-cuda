@@ -17,10 +17,10 @@ protected:
         m_euroCall.q = static_cast<real>(0.02);
         m_euroCall.t = static_cast<real>(1.0);
         m_euroCall.z = static_cast<real>(0.2);
-        m_euroCall.w = kw::kParity::Call;
+        m_euroCall.w = kw::Parity::Call;
 
         m_euroPut = m_euroCall;
-        m_euroPut.w = kw::kParity::Put;
+        m_euroPut.w = kw::Parity::Put;
     }
 
     kw::Option

@@ -39,6 +39,7 @@ Options:
     --gpu64         Run double-precision benchmark on GPU
     -n <num>        Run <num> batches (when 0 run all) [default: 0]
     --put           Include put options
+    --ql64          Run double-precision benchmark with QuantLib
     -t <num>        Use <num> points for t-grid [default: 512]
     -v              Show extra details, be verbose
     -x <num>        Use <num> points for x-grid [default: 512]
@@ -140,7 +141,8 @@ kw::Error
             KW_BENCHMARK_RESUME(label);
         }
 
-        if (auto error = engine->run(assets); !error.empty())
+        std::vector<double> prices;
+        if (auto error = engine->price(assets, prices); !error.empty())
             return "benchPortfolio: " + error;
 
         if (assets.size() == batchSize) {
@@ -152,11 +154,7 @@ kw::Error
             const auto& asset = assets[j];
             const auto& price = portfolio.at(asset);
 
-            double got;
-            if (auto error = engine->price(j, asset.s, got); !error.empty()) {
-                std::cerr << error << std::endl;
-                continue;
-            }
+            double got = prices[j];
 
             if (price >= tolerance) {
                 double absDiff = std::abs(price - got);
@@ -244,7 +242,7 @@ kw::Error
         for (auto ii = portfolio.begin(); ii != portfolio.end(); )
         {
             const auto& asset = ii->first;
-            if ((keepCall && asset.w != kw::kParity::Call) || (keepPut && asset.w != kw::kParity::Put))
+            if ((keepCall && asset.w != kw::Parity::Call) || (keepPut && asset.w != kw::Parity::Put))
                 portfolio.erase(ii++);
             else
                 ++ii;
@@ -266,7 +264,7 @@ kw::Error
     std::cout << std::endl;
 
     bool runAll = !args.at("--cpu32").asBool() && !args.at("--cpu64").asBool() &&
-        !args.at("--gpu32").asBool() && !args.at("--gpu64").asBool();
+        !args.at("--gpu32").asBool() && !args.at("--gpu64").asBool() && !args.at("--ql64").asBool();
 
     if (runAll || args.at("--cpu32").asBool())
     {
@@ -301,6 +299,14 @@ kw::Error
             return "cmdBench: " + error;
     }
 
+    if (runAll || args.at("--ql64").asBool()) {
+        config.set("PRICE_ENGINE.MODE", "FD1D_QL");
+
+        const auto label = "Fd1d_QuantLib::solve";
+        if (auto error = benchPortfolio<double>(portfolio, config, batchSize, batchCount, tolerance, label); !error.empty())
+            return "cmdBench: " + error;
+    }
+
     return "";
 }
 
@@ -308,7 +314,7 @@ kw::Error
 
 int main(int argc, char** argv)
 {
-    auto version = "kwinto-cuda " + kw::Version::GIT_DESCRIBE + " (" + kw::Version::BUILD_DATE + ")";
+    auto version = "kwinto-cuda " + kw::Version::GIT_TAG + " (" + kw::Version::GIT_REV + ", " + kw::Version::BUILD_DATE + ")";
 
 
     auto args = docopt::docopt(

@@ -6,6 +6,7 @@
         "name": "boost-regex",
         "platform": "windows"
       },
+      "quantlib",
       "gtest"
     ],
     "builtin-baseline": "716c3524a54f1f50a25d16a4cdd360f5a7fcc150"

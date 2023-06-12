@@ -19,11 +19,7 @@ public:
 
     virtual
     Error
-        price(size_t i, double spot, double& price) const = 0;
-
-    virtual
-    Error
-        run(const std::vector<Option>& assets) = 0;
+        price(const std::vector<Option>& assets, std::vector<double>& prices) = 0;
 };
 
 }

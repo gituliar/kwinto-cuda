@@ -37,6 +37,7 @@ add_library(
   "kwPortfolio.cpp"
   "kwString.cpp"
   "Math/kwFd1d.cpp"
+  "PriceEngine/kwFd1dQl.cpp"
   "Utils/kwCuda.cpp"
 
   "kwVersion.cpp"
@@ -55,6 +56,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(docopt)
 
+# Link QuantLib
+find_package(
+    QuantLib CONFIG REQUIRED)
+
 
 target_include_directories(
     kwinto_lib
@@ -68,6 +73,7 @@ target_link_libraries(
         kwinto_gpu
 
         CUDA::cusparse
+        QuantLib::QuantLib
 )
 
 
@@ -91,7 +97,7 @@ add_custom_command(
 
 target_link_libraries(
     kwinto
-	PRIVATE
+    PRIVATE
         kwinto_lib
 
         docopt_s

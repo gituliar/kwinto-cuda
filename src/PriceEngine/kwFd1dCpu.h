@@ -38,30 +38,28 @@ public:
     }
 
     Error
-        price(size_t i, double spot, double& price) const override
-    {
-        Real price_;
-        if (auto error = m_solver.value(i, spot, m_xGrid, price_); !error.empty())
-            return "Fd1dCpu_PriceEngine::run: " + error;
-        price = price_;
-
-        return "";
-    }
-
-    Error
-        run(const std::vector<Option>& assets) override
+        price(const std::vector<Option>& assets, std::vector<double>& prices) override
     {
         const auto n = assets.size();
+        prices.resize(n);
 
         m_tGrid.resize(n, m_solver.tDim());
         m_xGrid.resize(n, m_solver.xDim());
         m_vGrid.resize(n, m_solver.xDim());
 
         if (auto error = initBatch(assets, m_batch, m_tGrid, m_xGrid, m_vGrid); !error.empty())
-            return "Fd1dCpu_PriceEngine::run: " + error;
+            return "Fd1dCpu_PriceEngine::price: " + error;
 
         if (auto error = m_solver.solve(m_batch, m_tGrid, m_xGrid, m_vGrid); !error.empty())
-            return "Fd1dCpu_PriceEngine::run: " + error;
+            return "Fd1dCpu_PriceEngine::price: " + error;
+
+
+        for (auto i = 0; i < n; i++) {
+            Real price_;
+            if (auto error = m_solver.value(i, assets[i].s, m_xGrid, price_); !error.empty())
+                return "Fd1dCpu_PriceEngine::price " + error;
+            prices[i] = price_;
+        }
 
         return "";
     }
@@ -132,7 +130,7 @@ public:
             const auto& asset = assets[i];
             for (auto j = 0; j < xDim; ++j) {
                 const auto& xj = xGrid(i, j);
-                if (asset.w == kParity::Put)
+                if (asset.w == Parity::Put)
                     vGrid(i,j) = std::max<Real>(0, asset.k - std::exp(xj));
                 else
                     vGrid(i,j) = std::max<Real>(0, std::exp(xj) - asset.k);

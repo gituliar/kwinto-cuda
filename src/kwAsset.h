@@ -7,18 +7,18 @@
 namespace kw
 {
 
-enum class kParity { Call, Put };
+enum class Parity { Call, Put };
 
 struct Option
 {
-    double  t; // time to maturity (1.0 means 1 year)
-    double  k; // strike (100 means $100)
-    double  z; // volatility (0.2 means 20% per year)
-    double  r; // interest rate (0.05 means 5% per year)
-    double  q; // dividend rate (0.03 means 3% per year)
-    double  s; // spot price (10 means $10)
-    bool    e; // early exercise
-    kParity w; // put or call
+    double  t; //  time to maturity     1.0 = 365 days
+    double  k; //  strike               100 = $100
+    double  z; //  volatility           0.2 = 20% per year
+    double  r; //  interest rate        0.05 = 5% per year
+    double  q; //  dividend rate        0.03 = 3% per year
+    double  s; //  spot price           100 = $100
+    bool    e; //  early exercise       true = American, false = European
+    Parity  w; //  put or call
 
     friend bool operator<(const Option& l, const Option& r)
     {

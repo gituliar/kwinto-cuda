@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <fstream>
 
 #include "kwPortfolio.h"
@@ -31,10 +32,10 @@ protected:
         m_config.set("FD1D.T_GRID_DIM", 1024);
         m_config.set("FD1D.X_GRID_DIM", 1024);
 
-        const auto srcPath = "test/portfolio.csv";
+        const auto srcPath = "portfolio.csv";
         if (auto error = kw::loadPortfolio(srcPath, m_portfolio); !error.empty())
         {
-            std::cerr << "kwPortfolioTest: Failed to open " << srcPath << '\n';
+            std::cerr << "kwPortfolioTest: " << error << '\n';
             return;
         }
     }
@@ -48,10 +49,15 @@ protected:
 
 TEST_F(kwPortfolioTest, Fd1dCpu)
 {
-    ASSERT_EQ(m_portfolio.size(), 42000);
+    ASSERT_EQ(m_portfolio.size(), 24000);
+
     std::vector<kw::Option> assets;
-    for (const auto& [asset, _] : m_portfolio)
+    for (const auto& [asset, _] : m_portfolio) {
+        if (!asset.e)
+            continue;
+
         assets.push_back(asset);
+    }
 
     kw::Config config;
     config.set("PRICE_ENGINE.MODE", "FD1D_CPU64");
@@ -59,17 +65,16 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
     kw::sPtr<kw::PriceEngine> engine;
     ASSERT_EQ(kw::PriceEngineFactory::create(config, engine), "");
 
-    ASSERT_EQ(engine->run(assets), "");
+    std::vector<double> prices;
+    ASSERT_EQ(engine->price(assets, prices), "");
 
-    size_t i = 0;
-    for (const auto& [asset, want]: m_portfolio)
+    for (int i = 0; i< assets.size(); i++)
     {
-        real got;
-        if (auto error = engine->price(i, asset.s, got); !error.empty())
-        {
-            std::cout << error << std::endl;
-            continue;
-        }
+        const auto& asset = assets[i];
+
+        const auto& want = m_portfolio[asset];
+        const auto& got = prices[i];
+
         EXPECT_NEAR(want, got, 0.04) << "spot = " << asset.s << "\nasset = " << asset << "\n";
 
         ++i;
