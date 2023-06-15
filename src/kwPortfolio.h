@@ -9,7 +9,7 @@
 namespace kw
 {
 
-using Portfolio = std::map<kw::Option, double>;
+using Portfolio = std::map<kw::Option, double>; //  Option -> Price
 
 kw::Error
     loadPortfolio(const std::string& srcPath_, Portfolio& portfolio);

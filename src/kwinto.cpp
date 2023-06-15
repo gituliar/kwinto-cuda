@@ -221,7 +221,6 @@ kw::Error
     kw::Portfolio portfolio;
     if (auto error = kw::loadPortfolio(args.at("<portfolio>").asString(), portfolio); !error.empty())
         return "cmdBench: " + error;
-    //if (args.at("--amer").asBool() != args.at("--euro").asBool())
     {
         bool keepAmerican = true; // args.at("--amer").asBool();
         bool keepEuropean = false; // args.at("--euro").asBool();
@@ -229,7 +228,8 @@ kw::Error
         for (auto ii = portfolio.begin(); ii != portfolio.end(); )
         {
             const auto& asset = ii->first;
-            if ((keepAmerican && !asset.e) || (keepEuropean && asset.e))
+            const auto& price = ii->second;
+            if (keepAmerican && !asset.e || keepEuropean && asset.e || price < tolerance)
                 portfolio.erase(ii++);
             else
                 ++ii;
@@ -248,14 +248,6 @@ kw::Error
                 ++ii;
         }
     }
-    //for (auto ii = portfolio.begin(); ii != portfolio.end(); )
-    //{
-    //    const auto& asset = ii->first;
-    //    if (asset.r != asset.q)
-    //        portfolio.erase(ii++);
-    //    else
-    //        ++ii;
-    //}
 
     std::cout << "Portfolio" << std::endl;
     std::cout << "    Assets     : " << portfolio.size() << std::endl;
