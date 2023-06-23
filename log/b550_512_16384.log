@@ -1,0 +1,101 @@
+kwinto-cuda  (deeba37, 2023-06-15 17:30:08 +0200)
+
+Command-Line Arguments
+    --call: false
+    --cpu32: true
+    --cpu64: true
+    --cuda-n: "8"
+    --cuda-x: "128"
+    --gpu32: true
+    --gpu64: true
+    --put: false
+    --ql64: false
+    -b: "16384"
+    -e: "0.5"
+    -n: "8"
+    -t: "512"
+    -v: true
+    -x: "512"
+    <portfolio>: "test/portfolio.csv"
+    bench: true
+
+Devices Info #0
+    Name:                 NVIDIA GeForce GTX 1070
+    Integrated:           0
+
+    Total SM:             15
+    Clock Rate:           1771.5 MHz
+    32-bit Regs (per SM): 65536
+    Max Blocks (per SM):  32
+    Max Threads (per SM): 2048
+
+    Total Memory:         8191 MB
+    Memory Clock Rate:    4004 MHz
+    Memory Bus Width:     256 bits
+    Peak Bandwidth:       256.256 GB/s
+
+Portfolio
+    Assets     : 154951
+    Batch count: 8
+    Batch size : 16384
+
+Benchmark for Fd1d<float>::solve
+    funCall : 8 times
+    totTime : 553789.850 ms
+    avgTime : 69223.731 ms
+    stdTime : 114.509 ms
+    minTime : 69022.873 ms
+    maxTime : 69414.550 ms
+
+Errors for Fd1d<float>::solve
+       RMSE : 1.055e-02
+      RRMSE : 1.643e-04
+        MAE : 1.298e-01
+        MRE : 2.190e-03
+      total : 131072 options
+
+Benchmark for Fd1d_Gpu<float>::solve
+    funCall : 8 times
+    totTime : 23055.944 ms
+    avgTime : 2881.993 ms
+    stdTime : 21.896 ms
+    minTime : 2857.797 ms
+    maxTime : 2926.931 ms
+
+Errors for Fd1d_Gpu<float>::solve
+       RMSE : 7.022e-03
+      RRMSE : 1.293e-04
+        MAE : 8.857e-02
+        MRE : 2.227e-03
+      total : 131072 options
+
+Benchmark for Fd1d<double>::solve
+    funCall : 8 times
+    totTime : 547203.295 ms
+    avgTime : 68400.412 ms
+    stdTime : 99.357 ms
+    minTime : 68200.542 ms
+    maxTime : 68519.928 ms
+
+Errors for Fd1d<double>::solve
+       RMSE : 3.026e-03
+      RRMSE : 9.189e-05
+        MAE : 5.326e-02
+        MRE : 2.203e-03
+      total : 131072 options
+
+Benchmark for Fd1d_Gpu<double>::solve
+    funCall : 8 times
+    totTime : 38959.980 ms
+    avgTime : 4869.997 ms
+    stdTime : 54.106 ms
+    minTime : 4836.213 ms
+    maxTime : 5009.145 ms
+
+Errors for Fd1d_Gpu<double>::solve
+       RMSE : 3.026e-03
+      RRMSE : 9.189e-05
+        MAE : 5.326e-02
+        MRE : 2.203e-03
+      total : 131072 options
+
