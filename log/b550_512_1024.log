@@ -1,4 +1,4 @@
-kwinto-cuda  (deeba37, 2023-06-15 17:30:08 +0200)
+kwinto-cuda  (ad348f7+, 2023-08-15 20:16:29 +0200)
 
 Command-Line Arguments
     --call: false
@@ -41,11 +41,11 @@ Portfolio
 
 Benchmark for Fd1d<float>::solve
     funCall : 8 times
-    totTime : 25283.194 ms
-    avgTime : 3160.399 ms
-    stdTime : 30.791 ms
-    minTime : 3135.796 ms
-    maxTime : 3220.146 ms
+    totTime : 2611.750 ms
+    avgTime : 326.469 ms
+    stdTime : 19.064 ms
+    minTime : 308.966 ms
+    maxTime : 364.129 ms
 
 Errors for Fd1d<float>::solve
        RMSE : 3.110e-03
@@ -56,11 +56,11 @@ Errors for Fd1d<float>::solve
 
 Benchmark for Fd1d_Gpu<float>::solve
     funCall : 8 times
-    totTime : 2998.952 ms
-    avgTime : 374.869 ms
-    stdTime : 2.103 ms
-    minTime : 372.865 ms
-    maxTime : 379.275 ms
+    totTime : 3010.154 ms
+    avgTime : 376.269 ms
+    stdTime : 3.324 ms
+    minTime : 371.622 ms
+    maxTime : 381.816 ms
 
 Errors for Fd1d_Gpu<float>::solve
        RMSE : 2.120e-03
@@ -71,11 +71,11 @@ Errors for Fd1d_Gpu<float>::solve
 
 Benchmark for Fd1d<double>::solve
     funCall : 8 times
-    totTime : 26953.255 ms
-    avgTime : 3369.157 ms
-    stdTime : 7.453 ms
-    minTime : 3361.237 ms
-    maxTime : 3383.048 ms
+    totTime : 2704.756 ms
+    avgTime : 338.095 ms
+    stdTime : 4.172 ms
+    minTime : 330.108 ms
+    maxTime : 345.138 ms
 
 Errors for Fd1d<double>::solve
        RMSE : 2.652e-04
@@ -86,11 +86,11 @@ Errors for Fd1d<double>::solve
 
 Benchmark for Fd1d_Gpu<double>::solve
     funCall : 8 times
-    totTime : 4616.489 ms
-    avgTime : 577.061 ms
-    stdTime : 57.234 ms
-    minTime : 553.943 ms
-    maxTime : 728.473 ms
+    totTime : 4458.885 ms
+    avgTime : 557.361 ms
+    stdTime : 2.714 ms
+    minTime : 553.059 ms
+    maxTime : 561.238 ms
 
 Errors for Fd1d_Gpu<double>::solve
        RMSE : 2.652e-04
