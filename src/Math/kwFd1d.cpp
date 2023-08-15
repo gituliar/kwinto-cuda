@@ -1,7 +1,11 @@
 ﻿#include "kwFd1d.h"
 
+#include <iostream>
+
 #include "cuda.h"
 #include "cusparse.h"
+
+#include "kwThreadPool.h"
 
 
 template<typename Real>
@@ -54,10 +58,20 @@ kw::Fd1d<Real>::solve(
             m_v(bi, xi) = vGrid(bi, xi);
     }
 
+    auto priceJob = [&](size_t i) {
+        std::cout << i << std::endl;
+    };
+
+    auto solveJob = [&](size_t i) {
+        if (auto error = solveOne(i, tGrid, xGrid, vGrid); !error.empty()) {
+            std::cerr << "Fd1d<Real>::solve: " + error << std::endl;
+        }
+    };
+    auto& pool = kw::ThreadPool::instance();
     for (auto bi = 0; bi < batch.size(); ++bi) {
-        if (auto error = solveOne(bi, tGrid, xGrid, vGrid); !error.empty())
-            return "Fd1d<Real>::solve: " + error;
+        pool.add_job(std::bind(solveJob, bi));
     }
+    pool.wait();
 
     return "";
 }

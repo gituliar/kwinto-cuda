@@ -36,6 +36,7 @@ add_library(
   "kwBenchmark.cpp"
   "kwPortfolio.cpp"
   "kwString.cpp"
+  "kwThreadPool.cpp"
   "Math/kwFd1d.cpp"
   "PriceEngine/kwFd1dQl.cpp"
   "Utils/kwCuda.cpp"
