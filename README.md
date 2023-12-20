@@ -1,25 +1,16 @@
-## Release Instructions
+# kwinto-cuda
 
-Make sure **no changes are pending** (`git status` is empty).
+Contains implementation of the finite-difference pricer for American options on CPU and GPU.
 
-- Define a release version to be pasted in `src/kwVersion.h` by CMake
+More details on TastyHedge blog:
 
-  ```
-  git tag -m "pre-build" vX.Y.Z
-  ```
+- [Pricing Derivatives on a
+  Budget](https://tastycode.dev/blog/tasty-gpu-pricing-derivatives-on-a-budget)
+- [Finite-Difference Pricer]()
 
-  ```
-  make release
-  ```
+## Requirements
 
-  ```
-  git commit -m "Release vX.Y.Z"
-  ```
-
-  ```
-  git tag -f -m "Release vX.Y.Z" vX.Y.Z
-  ```
-
-  ```
-  git push --follow-tags
-  ```
+- CMake
+- C++ compiler
+  - MSVC on Windows
+  - GCC / Clang on Linux
