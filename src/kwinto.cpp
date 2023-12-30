@@ -131,7 +131,10 @@ kw::Error
     double absDiffSum1 = 0, absDiffSum2 = 0, relDiffSum1 = 0, relDiffSum2 = 0;
     size_t absDiffSize = 0, relDiffSize = 0;
     double mae = 0; // Maximum Absolute Error
+    kw::Option maeAsset;
     double mre = 0; // Maximum Relative Error
+    kw::Option mreAsset;
+
     for (auto i = 0; i < batchCount; ++i) {
         const auto& assets = batches[i];
 
@@ -160,8 +163,14 @@ kw::Error
                 double absDiff = std::abs(price - got);
                 double relDiff = absDiff / price;
 
-                mae = std::max(mae, absDiff);
-                mre = std::max(mre, relDiff);
+                if (absDiff > mae) {
+                    mae = absDiff;
+                    maeAsset = asset;
+                }
+                if (relDiff > mre) {
+                    mre = relDiff;
+                    mreAsset = asset;
+                }
 
                 absDiffSum1 += absDiff;
                 absDiffSum2 += absDiff * absDiff;
@@ -189,6 +198,8 @@ kw::Error
         std::cout << "      RRMSE : " << rrmse << std::endl;
         std::cout << "        MAE : " << mae << std::endl;
         std::cout << "        MRE : " << mre << std::endl;
+        std::cout << "  MAE Asset : " << maeAsset.asString() << std::endl;
+        std::cout << "  MRE Asset : " << mreAsset.asString() << std::endl;
         std::cout << std::fixed;
         std::cout << "      total : " << absDiffSize << " options" << std::endl;
         std::cout << std::endl;

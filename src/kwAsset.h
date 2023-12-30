@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <string>
 #include <tuple>
 
 
@@ -25,6 +26,23 @@ struct Option
         return std::tie(l.t, l.k, l.z, l.q, l.r, l.s, l.e, l.w)
             < std::tie(r.t, r.k, r.z, r.q, r.r, r.s, r.e, r.w);
     };
+
+    std::string asString() const
+    {
+        std::string res = "<Option";
+
+        res += e ? " e=true" : " e=false";
+        res += " k=" + std::to_string(k);
+        res += " q=" + std::to_string(q);
+        res += " r=" + std::to_string(r);
+        res += " s=" + std::to_string(s);
+        res += " t=" + std::to_string(t);
+        res += w == Parity::Call ? " w=Call" : " w=Put";
+        res += " z=" + std::to_string(z);
+        res += ">";
+
+        return res;
+    }
 };
 
 std::ostream&
