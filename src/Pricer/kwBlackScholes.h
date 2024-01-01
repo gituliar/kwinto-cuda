@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kwAsset.h"
+#include "Core/kwAsset.h"
 #include "Math/kwMath.h"
 #include "Pricer/kwPricer.h"
 

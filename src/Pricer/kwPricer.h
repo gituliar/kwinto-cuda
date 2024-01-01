@@ -1,8 +1,7 @@
 #pragma once
 
-#include "kwAsset.h"
-#include "Core/kwTypes.h"
-#include "Utils/kwConfig.h"
+#include "Core/kwAsset.h"
+#include "Core/kwConfig.h"
 
 #include <vector>
 

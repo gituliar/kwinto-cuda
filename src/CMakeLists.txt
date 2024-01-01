@@ -5,11 +5,11 @@ include(FetchContent)
 add_library(
   kwinto_lib
 
-  "kwAsset.cpp"
   "kwBenchmark.cpp"
   "kwPortfolio.cpp"
-  "kwString.cpp"
   "kwThreadPool.cpp"
+
+  "Core/kwAsset.cpp"
   
   "Math/kwFd1d.cpp"
   "Math/kwMath.cpp"

@@ -1,12 +1,10 @@
 ﻿#pragma once
 
 #include <cmath>
-#include <numbers>
-#include <vector>
+//#include <vector>
 
 #include "Core/kwCore.h"
-
-#include "kwString.h"
+#include "Core/kwString.h"
 
 
 namespace kw

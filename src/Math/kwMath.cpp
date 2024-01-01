@@ -1,3 +1,5 @@
+#include <numbers>
+
 #include "Core/kwTypes.h"
 #include "Math/kwMath.h"
 

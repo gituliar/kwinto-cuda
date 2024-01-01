@@ -8,10 +8,10 @@
 #define KW_BENCHMARK_ON
 #include "kwBenchmark.h"
 
+#include "Core/kwConfig.h"
 #include "Math/kwFd1d.h"
+#include "Core/kwTime.h"
 #include "Pricer/kwPriceEngineFactory.h"
-#include "Utils/kwConfig.h"
-#include "kwTime.h"
 #include "kwPortfolio.h"
 #include "kwVersion.h"
 

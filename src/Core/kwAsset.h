@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/kwCore.h"
+
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -12,14 +14,14 @@ enum class Parity { Call, Put };
 
 struct Option
 {
-    double  t; //  time to maturity     1.0 = 365 days
-    double  k; //  strike               100 = $100
-    double  z; //  volatility           0.2 = 20% per year
-    double  r; //  interest rate        0.05 = 5% per year
-    double  q; //  dividend rate        0.03 = 3% per year
-    double  s; //  spot price           100 = $100
-    bool    e; //  early exercise       true = American, false = European
-    Parity  w; //  put or call
+    f64    t; //  time to maturity     1.0 = 365 days
+    f64    k; //  strike               100 = $100
+    f64    z; //  volatility           0.2 = 20% per year
+    f64    r; //  interest rate        0.05 = 5% per year
+    f64    q; //  dividend rate        0.03 = 3% per year
+    f64    s; //  spot price           100 = $100
+    bool   e; //  early exercise       true = American, false = European
+    Parity w; //  put or call
 
     friend bool operator<(const Option& l, const Option& r)
     {

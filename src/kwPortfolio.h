@@ -1,7 +1,7 @@
 #pragma once
 
-#include "kwAsset.h"
-#include "kwString.h"
+#include "Core/kwAsset.h"
+#include "Core/kwString.h"
 
 #include <map>
 

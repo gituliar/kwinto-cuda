@@ -3,6 +3,7 @@
 #include "Core/kwTypes.h"
 
 #include <charconv>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,7 +33,18 @@ Error
 };
 
 
+static
 std::vector<std::string>
-    split(const std::string& src, char delim);
+    split(const std::string& src, char delim)
+{
+    std::vector<std::string> result;
+    std::stringstream buf(src);
+
+    for (std::string item; getline(buf, item, delim);) {
+        result.push_back(item);
+    }
+
+    return result;
+}
 
 }

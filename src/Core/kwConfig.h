@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/kwTypes.h"
+#include "Core/kwCore.h"
 
 #include <concepts>
 #include <map>
@@ -23,35 +23,35 @@ class Config {
 private:
     //std::map<std::string, bool>
     //        m_bools;
-    std::map<std::string, double>
+    std::map<std::string, f64>
             m_doubles;
-    std::map<std::string, int64_t>
+    std::map<std::string, i64>
             m_integers;
     std::map<std::string, std::string>
             m_strings;
 
 public:
-    double get(const std::string& key, explicit_floating auto defaultValue) const
+    f64 get(const std::string& key, explicit_floating auto defaultValue) const
     {
         const auto ii = m_doubles.find(key);
         return ii != m_doubles.end() ? ii->second : defaultValue;
     }
 
-    int64_t get(const std::string& key, explicit_integral auto defaultValue) const
+    i64 get(const std::string& key, explicit_integral auto defaultValue) const
     {
         const auto ii = m_integers.find(key);
         return ii != m_integers.end() ? ii->second : defaultValue;
     }
 
     std::string
-            get(const std::string& key, const explicit_string auto& defaultValue) const
+        get(const std::string& key, const explicit_string auto& defaultValue) const
     {
         const auto ii = m_strings.find(key);
         return ii != m_strings.end() ? ii->second : defaultValue;
     }
 
 
-    void    erase(const std::string& key)
+    void erase(const std::string& key)
     {
         m_doubles.erase(key);
         m_integers.erase(key);
@@ -59,15 +59,15 @@ public:
     }
 
 
-    void    set(const std::string& key, explicit_floating auto value)
+    void set(const std::string& key, explicit_floating auto value)
     {
         m_doubles[key] = value;
     }
-    void    set(const std::string& key, explicit_integral auto value)
+    void set(const std::string& key, explicit_integral auto value)
     {
         m_integers[key] = value;
     }
-    void    set(const std::string& key, const explicit_string auto& value)
+    void set(const std::string& key, const explicit_string auto& value)
     {
         m_strings[key] = value;
     }

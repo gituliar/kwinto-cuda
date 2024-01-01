@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "kwAsset.h"
+#include "Core/kwAsset.h"
 #include "Core/kwCore.h"
+#include "Core/kwConfig.h"
 #include "Utils/kwVector2d.h"
-#include "Utils/kwConfig.h"
 
 
 namespace kw

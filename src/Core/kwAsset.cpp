@@ -1,4 +1,4 @@
-#include "kwAsset.h"
+#include "Core/kwAsset.h"
 
 std::ostream&
 kw::operator<<(std::ostream& os, const kw::Option& o)

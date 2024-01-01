@@ -8,21 +8,6 @@
 
 
 
-std::vector<std::string> split(const std::string& src, char delim)
-{
-    std::vector<std::string> result;
-    std::stringstream buf(src);
-
-    for (std::string item; getline(buf, item, delim);) {
-        result.push_back(item);
-    }
-
-    return result;
-}
-
-
-using real = double;
-
 class kwPortfolioTest : public testing::Test {
 protected:
     void

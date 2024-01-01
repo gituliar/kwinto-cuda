@@ -1,10 +1,8 @@
 #pragma once
 
-
+#include "Core/kwConfig.h"
 #include "Math/kwFd1d.h"
 #include "Pricer/kwFd1d.h"
-
-#include "Utils/kwConfig.h"
 
 
 namespace kw
