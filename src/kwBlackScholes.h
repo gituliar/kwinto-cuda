@@ -1,12 +1,11 @@
 #pragma once
 
 #include "kwAsset.h"
-#include "kwMath.h"
+#include "Math/kwMath.h"
 
 namespace kw
 {
 
-template<typename Real>
 class BlackScholes
 {
 public:
@@ -23,20 +22,20 @@ public:
     }
 
     Error
-        value(const size_t ni, const Real s, Real& v) const
+        value(const size_t ni, const f64 s, f64& v) const
     {
         const auto& asset = m_assets[ni];
 
-        const Real k = asset.k;
-        const Real q = asset.q;
-        const Real r = asset.r;
-        const Real t = asset.t;
-        const Real z = asset.z;
+        const f64 k = asset.k;
+        const f64 q = asset.q;
+        const f64 r = asset.r;
+        const f64 t = asset.t;
+        const f64 z = asset.z;
         const auto w = (asset.w == Parity::Put) ? -1 : 1;
 
-        Real zt = z * std::sqrt(t);
-        Real d1 = 1 / zt * (std::log(s / k) + (r - q + 0.5 * z * z) * t);
-        Real d2 = d1 - zt;
+        f64 zt = z * std::sqrt(t);
+        f64 d1 = 1 / zt * (std::log(s / k) + (r - q + 0.5 * z * z) * t);
+        f64 d2 = d1 - zt;
 
         v = w * (s * cdfNormal(w * d1) * std::exp(-q * t) - k * cdfNormal(w * d2) * std::exp(-r * t));
 

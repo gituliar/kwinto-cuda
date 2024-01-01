@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Utils/kwTypes.h"
+#include "Core/kwTypes.h"
 
 #include <concepts>
 #include <map>

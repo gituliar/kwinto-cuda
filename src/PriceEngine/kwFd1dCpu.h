@@ -1,27 +1,28 @@
 #pragma once
 
 #include "kwPriceEngine.h"
+
+#include "Math/kwMath.h"
 #include "Math/kwFd1d.h"
 
 
 namespace kw
 {
 
-template<typename Real>
 class Fd1dCpu_PriceEngine : public PriceEngine
 {
 private:
-    std::vector<Fd1dPde<Real>>
+    std::vector<Fd1dPde>
         m_batch;
 
-    Fd1d<Real>
+    Fd1d
         m_solver;
 
-    Fd1d<Real>::CpuGrid
+    Fd1d::CpuGrid
         m_tGrid;
-    Fd1d<Real>::CpuGrid
+    Fd1d::CpuGrid
         m_vGrid; // Initial value condition (final payoff)
-    Fd1d<Real>::CpuGrid
+    Fd1d::CpuGrid
         m_xGrid;
 
 public:
@@ -55,7 +56,7 @@ public:
 
 
         for (auto i = 0; i < n; i++) {
-            Real price_;
+            f64 price_;
             if (auto error = m_solver.value(i, assets[i].s, m_xGrid, price_); !error.empty())
                 return "Fd1dCpu_PriceEngine::price " + error;
             prices[i] = price_;
@@ -69,10 +70,10 @@ public:
     static Error
         initBatch(
             const std::vector<Option>& assets,
-            std::vector<Fd1dPde<Real>>& batch,
-            Vector2d<Real, Options>& tGrid,
-            Vector2d<Real, Options>& xGrid,
-            Vector2d<Real, Options>& vGrid)
+            std::vector<Fd1dPde>& batch,
+            Vector2d<f64, Options>& tGrid,
+            Vector2d<f64, Options>& xGrid,
+            Vector2d<f64, Options>& vGrid)
     {
         batch.clear();
         batch.reserve(assets.size());
@@ -93,8 +94,8 @@ public:
 
         // Init T-Grid
         for (auto i = 0; i < batch.size(); ++i) {
-            Real tMin = 0.0, tMax = batch[i].t;
-            Real dt = (tMax - tMin) / (tDim - 1);
+            f64 tMin = 0.0, tMax = batch[i].t;
+            f64 dt = (tMax - tMin) / (tDim - 1);
 
             for (auto j = 0; j < tDim; ++j)
                 tGrid(i, j) = tMin + j * dt;
@@ -108,19 +109,19 @@ public:
         for (auto i = 0; i < assets.size(); ++i) {
             const auto& asset = assets[i];
 
-            const Real density = 0.1;
-            const Real scale = 10;
+            const f64 density = 0.1;
+            const f64 scale = 10;
 
-            const Real xMid = log(asset.s);
-            const Real xMin = xMid - scale * asset.z * sqrt(asset.t);
-            const Real xMax = xMid + scale * asset.z * sqrt(asset.t);
+            const f64 xMid = std::log(asset.s);
+            const f64 xMin = xMid - scale * asset.z * std::sqrt(asset.t);
+            const f64 xMax = xMid + scale * asset.z * std::sqrt(asset.t);
 
-            const Real yMin = std::asinh((xMin - xMid) / density);
-            const Real yMax = std::asinh((xMax - xMid) / density);
+            const f64 yMin = std::asinh((xMin - xMid) / density);
+            const f64 yMax = std::asinh((xMax - xMid) / density);
 
-            const Real dy = 1. / (xDim - 1);
+            const f64 dy = 1. / (xDim - 1);
             for (auto j = 0; j < xDim; ++j) {
-                const Real yj = j * dy;
+                const f64 yj = j * dy;
                 xGrid(i, j) = xMid + density * std::sinh(yMin * (1.0 - yj) + yMax * yj);
             }
         }
@@ -131,9 +132,9 @@ public:
             for (auto j = 0; j < xDim; ++j) {
                 const auto& xj = xGrid(i, j);
                 if (asset.w == Parity::Put)
-                    vGrid(i,j) = std::max<Real>(0, asset.k - std::exp(xj));
+                    vGrid(i,j) = std::max<f64>(0, asset.k - std::exp(xj));
                 else
-                    vGrid(i,j) = std::max<Real>(0, std::exp(xj) - asset.k);
+                    vGrid(i,j) = std::max<f64>(0, std::exp(xj) - asset.k);
             }
         }
 

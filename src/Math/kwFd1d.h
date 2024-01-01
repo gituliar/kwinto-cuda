@@ -1,7 +1,9 @@
 ﻿#pragma once
 
+#include <vector>
+
 #include "kwAsset.h"
-#include "kwMath.h"
+#include "Core/kwCore.h"
 #include "Utils/kwVector2d.h"
 #include "Utils/kwConfig.h"
 
@@ -13,13 +15,12 @@ namespace kw
 //
 // It should be possible to make coefficients time-dependent (but kept cont for now).
 //
-template<typename Real>
 struct Fd1dPde {
-    Real    t;
+    f64 t;
 
-    Real    a0;
-    Real    ax;
-    Real    axx;
+    f64 a0;
+    f64 ax;
+    f64 axx;
 };
 
 //  1D PDE:
@@ -34,16 +35,15 @@ struct Fd1dPde {
 //
 //      [1 - θ dt 𝒜] V(t) = [1 + (1 - θ) dt 𝒜] V(t+dt)
 //
-template<typename Real>
 class Fd1d {
 public:
-    using CpuGrid = kw::Vector2d<Real, kColMajor | kCpu>;
+    using CpuGrid = kw::Vector2d<f64, kColMajor | kCpu>;
 
 private:
-    Real    m_theta;
+    f64 m_theta;
 
-    size_t  m_tDim;
-    size_t  m_xDim;
+    u64 m_tDim;
+    u64 m_xDim;
 
     // pde coefficients
     // t-grid <n × tDim>
@@ -60,31 +60,31 @@ private:
     CpuGrid m_v;
 
 public:
-    const size_t&
+    const u64&
         tDim() const { return m_tDim; }
-    const size_t&
+    const u64&
         xDim() const { return m_xDim; }
 
     Error
-        init(size_t tDim, size_t xDim);
+        init(u64 tDim, u64 xDim);
 
     Error
         solve(
-            const std::vector<Fd1dPde<Real>>& batch,
+            const std::vector<Fd1dPde>& batch,
             const CpuGrid& tGrid,
             const CpuGrid& xGrid,
             const CpuGrid& vGrid);
     Error
         value(
-            const size_t i,
-            const Real s,
+            const u64 i,
+            const f64 s,
             const CpuGrid& xGrid,
-            Real& v) const;
+            f64& v) const;
 
 private:
     Error
         solveOne(
-            const uint32_t ni,
+            const u64 ni,
             const CpuGrid& tGrid,
             const CpuGrid& xGrid,
             const CpuGrid& vGrid);

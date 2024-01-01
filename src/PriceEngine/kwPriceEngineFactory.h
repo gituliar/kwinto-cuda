@@ -21,15 +21,15 @@ public:
 
         if (mode == "FD1D_CPU32")
         {
-            engine = make_sPtr<Fd1dCpu_PriceEngine<float>>();
-            if (auto error = engine->init(config); !error.empty())
-                return "PriceEngineFactory: " + error;
-            return "";
+            //engine = make_sPtr<Fd1dCpu_PriceEngine<float>>();
+            //if (auto error = engine->init(config); !error.empty())
+            //    return "PriceEngineFactory: " + error;
+            //return "";
         }
 
         if (mode == "FD1D_CPU64")
         {
-            engine = make_sPtr<Fd1dCpu_PriceEngine<double>>();
+            engine = make_sPtr<Fd1dCpu_PriceEngine>();
             if (auto error = engine->init(config); !error.empty())
                 return "PriceEngineFactory: " + error;
             return "";

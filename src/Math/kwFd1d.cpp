@@ -2,12 +2,14 @@
 
 #include <iostream>
 
+#include "Math/kwMath.h"
 #include "kwThreadPool.h"
 
+using namespace kw;
 
-template<typename Real>
-kw::Error
-kw::Fd1d<Real>::init(size_t tDim, size_t xDim)
+
+Error
+Fd1d::init(u64 tDim, u64 xDim)
 {
     m_theta = 0.5;
 
@@ -18,10 +20,9 @@ kw::Fd1d<Real>::init(size_t tDim, size_t xDim)
 };
 
 
-template<typename Real>
-kw::Error
-kw::Fd1d<Real>::solve(
-    const std::vector<Fd1dPde<Real>>& batch,
+Error
+Fd1d::solve(
+    const std::vector<Fd1dPde>& batch,
     const CpuGrid& tGrid,
     const CpuGrid& xGrid,
     const CpuGrid& vGrid)
@@ -55,11 +56,11 @@ kw::Fd1d<Real>::solve(
             m_v(bi, xi) = vGrid(bi, xi);
     }
 
-    auto priceJob = [&](size_t i) {
+    auto priceJob = [&](u64 i) {
         std::cout << i << std::endl;
     };
 
-    auto solveJob = [&](size_t i) {
+    auto solveJob = [&](u64 i) {
         if (auto error = solveOne(i, tGrid, xGrid, vGrid); !error.empty()) {
             std::cerr << "Fd1d<Real>::solve: " + error << std::endl;
         }
@@ -73,10 +74,9 @@ kw::Fd1d<Real>::solve(
     return "";
 }
 
-template<typename Real>
-kw::Error
-kw::Fd1d<Real>::solveOne(
-    const uint32_t ni,
+Error
+Fd1d::solveOne(
+    const u64 ni,
     const CpuGrid& tGrid,
     const CpuGrid& xGrid,
     const CpuGrid& vGrid)
@@ -86,13 +86,13 @@ kw::Fd1d<Real>::solveOne(
         //   - Calc B = [1 - θ dt 𝒜]
         //   - Calc W = [1 + (1 - θ) dt 𝒜] V(t + dt)
 
-        Real dt = tGrid(ni, ti + 1) - tGrid(ni, ti);
+        f64 dt = tGrid(ni, ti + 1) - tGrid(ni, ti);
         {
             const auto xi = 0;
             //const auto i = ni + xi * n;
             //const auto j = ni + ti * n;
 
-            const Real inv_dx = static_cast<Real>(1.) / (xGrid(ni, xi + 1) - xGrid(ni, xi));
+            const f64 inv_dx = 1. / (xGrid(ni, xi + 1) - xGrid(ni, xi));
 
             m_bl(ni, xi) = 0;
             m_b(ni, xi) = 1 - m_theta * dt * (m_a0(ni, ti) - inv_dx * m_ax(ni, ti));
@@ -103,13 +103,13 @@ kw::Fd1d<Real>::solveOne(
         }
 
         for (auto xi = 1; xi < m_xDim - 1; ++xi) {
-            const Real inv_dxu = (Real)(1.) / (xGrid(ni, xi + 1) - xGrid(ni, xi));
-            const Real inv_dxm = (Real)(1.) / (xGrid(ni, xi + 1) - xGrid(ni, xi - 1));
-            const Real inv_dxd = (Real)(1.) / (xGrid(ni, xi) - xGrid(ni, xi - 1));
+            const f64 inv_dxu = 1. / (xGrid(ni, xi + 1) - xGrid(ni, xi));
+            const f64 inv_dxm = 1. / (xGrid(ni, xi + 1) - xGrid(ni, xi - 1));
+            const f64 inv_dxd = 1. / (xGrid(ni, xi) - xGrid(ni, xi - 1));
 
-            const Real inv_dx2u = (Real)(2.) * inv_dxu * inv_dxm;
-            const Real inv_dx2m = (Real)(2.) * inv_dxd * inv_dxu;
-            const Real inv_dx2l = (Real)(2.) * inv_dxd * inv_dxm;
+            const f64 inv_dx2u = 2. * inv_dxu * inv_dxm;
+            const f64 inv_dx2m = 2. * inv_dxd * inv_dxu;
+            const f64 inv_dx2l = 2. * inv_dxd * inv_dxm;
 
             m_bl(ni, xi) = -m_theta * dt * (-inv_dxm * m_ax(ni, ti) + inv_dx2l * m_axx(ni, ti));
             m_b(ni, xi) = 1 - m_theta * dt * (m_a0(ni, ti) - inv_dx2m * m_axx(ni, ti));
@@ -122,7 +122,7 @@ kw::Fd1d<Real>::solveOne(
 
         {
             const auto xi = m_xDim - 1;
-            const Real inv_dx = static_cast<Real>(1.) / (xGrid(ni, xi) - xGrid(ni, xi - 1));
+            const f64 inv_dx = 1. / (xGrid(ni, xi) - xGrid(ni, xi - 1));
 
             m_bl(ni, m_xDim - 1) = -m_theta * dt * (-inv_dx * m_ax(ni, ti));
             m_b(ni, m_xDim - 1) = 1 - m_theta * dt * (m_a0(ni, ti) + inv_dx * m_ax(ni, ti));
@@ -153,15 +153,14 @@ kw::Fd1d<Real>::solveOne(
 }
 
 
-template<typename Real>
-kw::Error
-kw::Fd1d<Real>::value(
-    const size_t ni,
-    const Real s,
+Error
+Fd1d::value(
+    const u64 ni,
+    const f64 s,
     const CpuGrid& xGrid,
-    Real& v) const
+    f64& v) const
 {
-    Real x = std::log(s);
+    f64 x = std::log(s);
 
     const auto n = xGrid.cols();
     const auto xDim = xGrid.rows();
@@ -169,7 +168,7 @@ kw::Fd1d<Real>::value(
     if (ni >= n)
         return "Fd1d::value: Solution index out of range";
 
-    size_t xi = 0;
+    u64 xi = 0;
     while ((xi < xDim) && (xGrid(ni, xi) < x))
         ++xi;
 
@@ -184,7 +183,3 @@ kw::Fd1d<Real>::value(
 
     return "";
 }
-
-
-template class kw::Fd1d<double>;
-template class kw::Fd1d<float>;

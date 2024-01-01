@@ -10,7 +10,9 @@ add_library(
   "kwPortfolio.cpp"
   "kwString.cpp"
   "kwThreadPool.cpp"
+  
   "Math/kwFd1d.cpp"
+  "Math/kwMath.cpp"
 
   "kwVersion.cpp"
 )
