@@ -27,7 +27,10 @@ BlackScholes_Pricer::price(const std::vector<Option>& assets, std::vector<f64>& 
 Error
 BlackScholes_Pricer::priceOne(const Option& asset, f64& price) const
 {
-    //const auto& asset = m_assets[ni];
+    if (asset.e) {
+        price = nan;
+        return "";
+    }
 
     const f64 k = asset.k;
     const f64 q = asset.q;

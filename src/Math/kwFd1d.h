@@ -21,6 +21,8 @@ struct Fd1dPde {
     f64 a0;
     f64 ax;
     f64 axx;
+
+    bool earlyExercise;
 };
 
 //  1D PDE:
@@ -85,6 +87,7 @@ private:
     Error
         solveOne(
             const u64 ni,
+            const bool earlyExercise,
             const CpuGrid& tGrid,
             const CpuGrid& xGrid,
             const CpuGrid& vGrid);

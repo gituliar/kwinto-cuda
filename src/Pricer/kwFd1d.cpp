@@ -62,6 +62,8 @@ Fd1d_Pricer::initBatch(
         pde.a0 = -a.r;
         pde.ax = a.r - a.q - a.z * a.z / 2;
         pde.axx = a.z * a.z / 2;
+        
+        pde.earlyExercise = a.e;
     }
 
     const auto tDim = tGrid.rows();

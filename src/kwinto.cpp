@@ -9,9 +9,9 @@
 #include "kwBenchmark.h"
 
 #include "Core/kwConfig.h"
-#include "Math/kwFd1d.h"
 #include "Core/kwTime.h"
-#include "Pricer/kwPriceEngineFactory.h"
+#include "Math/kwFd1d.h"
+#include "Pricer/kwPricerFactory.h"
 #include "kwPortfolio.h"
 #include "kwVersion.h"
 
@@ -114,7 +114,7 @@ kw::Error
         batchCount = (portfolio.size() + batchSize - 1) / batchSize;
 
     kw::sPtr<kw::Pricer> engine;
-    if (auto error = kw::PriceEngineFactory::create(config, engine); !error.empty())
+    if (auto error = kw::PricerFactory::create(config, engine); !error.empty())
         return "benchPortfolio: " + error;
 
     std::vector<std::vector<kw::Option>> batches(1);

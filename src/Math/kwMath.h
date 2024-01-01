@@ -10,7 +10,8 @@
 namespace kw
 {
 
-template<typename f64>
+using std::isnan;
+
 constexpr f64
     nan = std::numeric_limits<f64>::quiet_NaN();
 

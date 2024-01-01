@@ -5,8 +5,7 @@ add_executable(
 
     kwinto_test.cpp
 
-    kwBlackScholes_test.cpp
-    kwFd1d_test.cpp
+    "kwPricer_test.cpp"
     kwPortfolio_test.cpp
 )
 

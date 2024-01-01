@@ -61,7 +61,7 @@ Fd1d::solve(
     };
 
     auto solveJob = [&](u64 i) {
-        if (auto error = solveOne(i, tGrid, xGrid, vGrid); !error.empty()) {
+        if (auto error = solveOne(i, batch[i].earlyExercise, tGrid, xGrid, vGrid); !error.empty()) {
             std::cerr << "Fd1d<Real>::solve: " + error << std::endl;
         }
     };
@@ -77,6 +77,7 @@ Fd1d::solve(
 Error
 Fd1d::solveOne(
     const u64 ni,
+    const bool earlyExercise,
     const CpuGrid& tGrid,
     const CpuGrid& xGrid,
     const CpuGrid& vGrid)
@@ -145,8 +146,10 @@ Fd1d::solveOne(
 
         // Step 3
         //  - Adjust for early exercise
-        for (auto xi = 0; xi < m_xDim - 1; ++xi)
-            m_v(ni, xi) = std::max(m_v(ni, xi), vGrid(ni, xi));
+        if (earlyExercise) {
+            for (auto xi = 0; xi < m_xDim - 1; ++xi)
+                m_v(ni, xi) = std::max(m_v(ni, xi), vGrid(ni, xi));
+        }
     }
 
     return "";
