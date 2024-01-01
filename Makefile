@@ -28,4 +28,5 @@ config:
 check:
 	./out/linux-release/test/kwinto_test --gtest_filter=-kwPortfolioTest.*
 check-all:
+	zstdcat test/portfolio_qdfp.csv.zst > test/portfolio_qdfp.csv
 	./out/linux-release/test/kwinto_test

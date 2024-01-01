@@ -3,3 +3,4 @@
 bin
 out
 src/kwVersion.cpp
+test/*.csv
