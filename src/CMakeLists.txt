@@ -1,32 +1,5 @@
 include(FetchContent)
 
-### kwinto_gpu
-add_library(
-  kwinto_gpu
-
-  "Math/kwFd1d.cu"
-)
-
-# Link CUDA
-find_package(CUDAToolkit REQUIRED)
-
-set_property(TARGET kwinto_gpu PROPERTY CUDA_ARCHITECTURES OFF)
-set_property(TARGET kwinto_gpu PROPERTY CUDA_STANDARD 20)
-
-target_include_directories(
-    kwinto_gpu
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(
-    kwinto_gpu
-
-    PUBLIC
-        CUDA::cudart
-)
-
-
 ### kinto_lib
 
 add_library(
@@ -38,8 +11,6 @@ add_library(
   "kwString.cpp"
   "kwThreadPool.cpp"
   "Math/kwFd1d.cpp"
-  "PriceEngine/kwFd1dQl.cpp"
-  "Utils/kwCuda.cpp"
 
   "kwVersion.cpp"
 )
@@ -57,10 +28,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(docopt)
 
-# Link QuantLib
-find_package(
-    QuantLib CONFIG REQUIRED)
-
 
 target_include_directories(
     kwinto_lib
@@ -68,14 +35,11 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(
-    kwinto_lib
-    PUBLIC
-        kwinto_gpu
-
-        CUDA::cusparse
-        QuantLib::QuantLib
-)
+#target_link_libraries(
+#    kwinto_lib
+#    PUBLIC
+#        QuantLib::QuantLib
+#)
 
 
 ### kwinto

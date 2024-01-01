@@ -7,6 +7,7 @@ import QuantLib as ql
 
 def price(e = True, k = 100, q = 0.0, r = 0.05, s = 100, t = 1, w = -1, z = 0.2):
     anchor = ql.Date(18,4,2023)
+    ql.Settings.instance().setEvaluationDate(anchor)
     day_count = ql.Actual360()
     calendar = ql.UnitedStates(ql.UnitedStates.NYSE)
 
@@ -17,7 +18,7 @@ def price(e = True, k = 100, q = 0.0, r = 0.05, s = 100, t = 1, w = -1, z = 0.2)
     bsm_process = ql.BlackScholesMertonProcess( spot_handle, dividend_yield, flat_ts, flat_vol_ts )
 
     payoff = ql.PlainVanillaPayoff( ql.Option.Put if w < 0 else ql.Option.Call, k )
-    maturity = anchor + ql.Period(round(t * 360), ql.Days)
+    maturity = anchor + ql.Period(round(t * 360.), ql.Days)
 
     if e:
         engine = ql.QdFpAmericanEngine( bsm_process, ql.QdFpAmericanEngine.highPrecisionScheme() )
@@ -59,15 +60,25 @@ def vega(**kwargs):
 
 
 
-def generate(fo):
-    e = [True, False]
-    k = [100]
-    q = [0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
-    r = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
-    s = [25, 50, 80, 90, 100, 110, 120, 150, 175, 200]
-    t = [1./12, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2.0]
-    w = [-1, 1]
-    z = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
+def generate(fo, small=True):
+    if small:
+        e = [True, False]
+        k = [25, 50, 80, 90, 100, 110, 120, 150, 175, 200]
+        q = [0.02, 0.04, 0.06, 0.08, 0.1]
+        r = [0.02, 0.04, 0.06, 0.08, 0.1]
+        s = [100]
+        t = [1./12, 0.25, 0.5, 0.75, 1., 2., 3.]
+        w = [-1, 1]
+        z = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    else:
+        e = [True, False]
+        k = [100]
+        q = [0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
+        r = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
+        s = [25, 50, 80, 90, 100, 110, 120, 150, 175, 200]
+        t = [1./12, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2.0]
+        w = [-1, 1]
+        z = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
 
     def to_string(x):
         x_ = round(x, 6) + 0

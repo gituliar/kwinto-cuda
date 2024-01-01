@@ -17,7 +17,7 @@ endif()
 string(TIMESTAMP KWINTO_VERSION "%Y-%m-%d %H:%M")
 add_compile_definitions(KWINTO_VERSION="${KWINTO_VERSION}")
 
-project(kwinto LANGUAGES CUDA CXX)
+project(kwinto LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(src)

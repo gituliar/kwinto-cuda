@@ -53,48 +53,48 @@ Options:
 using Args = std::map<std::string, docopt::value>;
 
 
-kw::Error
-    printGpuInfo()
-{
-    int nDevices;
-    cudaGetDeviceCount(&nDevices);
-
-    for (int i = 0; i < nDevices; i++) {
-        cudaDeviceProp device;
-        cudaGetDeviceProperties(&device, i);
-
-        std::cout << "Devices Info #" << i <<  std::endl;
-        std::cout << "    Name:                 " << device.name << std::endl;
-        std::cout << "    Integrated:           " << device.integrated << std::endl;
-        std::cout << std::endl;
-
-        std::cout << "    Total SM:             " <<
-            device.multiProcessorCount << std::endl;
-        std::cout << "    Clock Rate:           " <<
-            device.clockRate / 1e3 << " MHz" << std::endl;
-        //std::cout << "    Warp size (threads):  " <<
-        //    device.warpSize << std::endl;
-        std::cout << "    32-bit Regs (per SM): " <<
-            device.regsPerMultiprocessor << std::endl;
-        std::cout << "    Max Blocks (per SM):  " <<
-            device.maxBlocksPerMultiProcessor << std::endl;
-        std::cout << "    Max Threads (per SM): " <<
-            device.maxThreadsPerMultiProcessor << std::endl;
-        std::cout << std::endl;
-
-        std::cout << "    Total Memory:         " <<
-            device.totalGlobalMem / 1024 / 1024 << " MB" << std::endl;
-        std::cout << "    Memory Clock Rate:    " <<
-            device.memoryClockRate / 1e3 << " MHz" << std::endl;
-        std::cout << "    Memory Bus Width:     " <<
-            device.memoryBusWidth << " bits" << std::endl;
-        std::cout << "    Peak Bandwidth:       " <<
-            2.0 * device.memoryClockRate * (device.memoryBusWidth / 8) / 1.0e6 << " GB/s" << std::endl;
-        std::cout << std::endl;
-    }
-
-    return "";
-}
+//kw::Error
+//    printGpuInfo()
+//{
+//    int nDevices;
+//    cudaGetDeviceCount(&nDevices);
+//
+//    for (int i = 0; i < nDevices; i++) {
+//        cudaDeviceProp device;
+//        cudaGetDeviceProperties(&device, i);
+//
+//        std::cout << "Devices Info #" << i <<  std::endl;
+//        std::cout << "    Name:                 " << device.name << std::endl;
+//        std::cout << "    Integrated:           " << device.integrated << std::endl;
+//        std::cout << std::endl;
+//
+//        std::cout << "    Total SM:             " <<
+//            device.multiProcessorCount << std::endl;
+//        std::cout << "    Clock Rate:           " <<
+//            device.clockRate / 1e3 << " MHz" << std::endl;
+//        //std::cout << "    Warp size (threads):  " <<
+//        //    device.warpSize << std::endl;
+//        std::cout << "    32-bit Regs (per SM): " <<
+//            device.regsPerMultiprocessor << std::endl;
+//        std::cout << "    Max Blocks (per SM):  " <<
+//            device.maxBlocksPerMultiProcessor << std::endl;
+//        std::cout << "    Max Threads (per SM): " <<
+//            device.maxThreadsPerMultiProcessor << std::endl;
+//        std::cout << std::endl;
+//
+//        std::cout << "    Total Memory:         " <<
+//            device.totalGlobalMem / 1024 / 1024 << " MB" << std::endl;
+//        std::cout << "    Memory Clock Rate:    " <<
+//            device.memoryClockRate / 1e3 << " MHz" << std::endl;
+//        std::cout << "    Memory Bus Width:     " <<
+//            device.memoryBusWidth << " bits" << std::endl;
+//        std::cout << "    Peak Bandwidth:       " <<
+//            2.0 * device.memoryClockRate * (device.memoryBusWidth / 8) / 1.0e6 << " GB/s" << std::endl;
+//        std::cout << std::endl;
+//    }
+//
+//    return "";
+//}
 
 
 template<typename Real>
@@ -226,8 +226,8 @@ kw::Error
     if (auto error = kw::fromString(args.at("-e").asString(), tolerance); !error.empty())
         return "cmdBench: Fail to parse '-n <num>': " + error;
 
-    if (auto error = printGpuInfo(); !error.empty())
-        return "cmdBench: " + error;
+    //if (auto error = printGpuInfo(); !error.empty())
+    //    return "cmdBench: " + error;
 
     kw::Portfolio portfolio;
     if (auto error = kw::loadPortfolio(args.at("<portfolio>").asString(), portfolio); !error.empty())

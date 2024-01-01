@@ -32,7 +32,7 @@ protected:
         m_config.set("FD1D.T_GRID_DIM", 1024);
         m_config.set("FD1D.X_GRID_DIM", 1024);
 
-        const auto srcPath = "portfolio.csv";
+        const auto srcPath = "test/portfolio.csv";
         if (auto error = kw::loadPortfolio(srcPath, m_portfolio); !error.empty())
         {
             std::cerr << "kwPortfolioTest: " << error << '\n';
