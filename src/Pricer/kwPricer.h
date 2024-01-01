@@ -10,7 +10,7 @@
 namespace kw
 {
 
-class PriceEngine
+class Pricer
 {
 public:
     virtual

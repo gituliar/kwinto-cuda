@@ -1,8 +1,9 @@
 #pragma once
 
-#include "kwFd1dCpu.h"
 
 #include "Math/kwFd1d.h"
+#include "Pricer/kwFd1d.h"
+
 #include "Utils/kwConfig.h"
 
 
@@ -13,7 +14,7 @@ class PriceEngineFactory
 {
 public:
     static Error
-        create(const Config& config, sPtr<PriceEngine>& engine)
+        create(const Config& config, sPtr<Pricer>& pricer)
     {
         std::string mode = config.get("PRICE_ENGINE.MODE", "");
         if (mode.empty())
@@ -29,8 +30,8 @@ public:
 
         if (mode == "FD1D_CPU64")
         {
-            engine = make_sPtr<Fd1dCpu_PriceEngine>();
-            if (auto error = engine->init(config); !error.empty())
+            pricer = make_sPtr<Fd1d_Pricer>();
+            if (auto error = pricer->init(config); !error.empty())
                 return "PriceEngineFactory: " + error;
             return "";
         }

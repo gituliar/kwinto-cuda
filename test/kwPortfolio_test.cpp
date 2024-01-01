@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include "kwPortfolio.h"
-#include "PriceEngine/kwPriceEngineFactory.h"
+#include "Pricer/kwPriceEngineFactory.h"
 
 
 
@@ -62,7 +62,7 @@ TEST_F(kwPortfolioTest, Fd1dCpu)
     kw::Config config;
     config.set("PRICE_ENGINE.MODE", "FD1D_CPU64");
 
-    kw::sPtr<kw::PriceEngine> engine;
+    kw::sPtr<kw::Pricer> engine;
     ASSERT_EQ(kw::PriceEngineFactory::create(config, engine), "");
 
     std::vector<double> prices;

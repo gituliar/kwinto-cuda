@@ -14,6 +14,9 @@ add_library(
   "Math/kwFd1d.cpp"
   "Math/kwMath.cpp"
 
+  "Pricer/kwBlackScholes.cpp"
+  "Pricer/kwFd1d.cpp"
+
   "kwVersion.cpp"
 )
 

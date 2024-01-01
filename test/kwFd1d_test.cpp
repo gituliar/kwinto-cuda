@@ -1,10 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "Math/kwFd1d.h"
-#include "PriceEngine/kwPriceEngineFactory.h"
+#include "Pricer/kwPriceEngineFactory.h"
 
-
-using real = double;
 
 class kwFd1dTest : public testing::Test {
 protected:
@@ -24,7 +22,7 @@ protected:
         m_config.set("FD1D.X_GRID_SIZE", 512);
     }
 
-    std::vector<std::pair<kw::Option, real>>
+    std::vector<std::pair<kw::Option, f64>>
         m_testData;
 
     kw::Config
@@ -38,11 +36,11 @@ TEST_F(kwFd1dTest, Fd1dCpu)
     for (const auto& test : m_testData)
         assets.push_back(test.first);
 
-    kw::sPtr<kw::PriceEngine> engine;
+    kw::sPtr<kw::Pricer> engine;
     m_config.set("PRICE_ENGINE.MODE", "FD1D_CPU64");
     ASSERT_EQ(kw::PriceEngineFactory::create(m_config, engine), "");
 
-    std::vector<double> prices;
+    std::vector<f64> prices;
     ASSERT_EQ(engine->price(assets, prices), "");
 
     for (auto i = 0; i < m_testData.size(); ++i) {
