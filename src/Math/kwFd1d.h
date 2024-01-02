@@ -3,9 +3,8 @@
 #include <vector>
 
 #include "Core/kwAsset.h"
-#include "Core/kwCore.h"
 #include "Core/kwConfig.h"
-#include "Utils/kwVector2d.h"
+#include "Core/kwGrid2d.h"
 
 
 namespace kw
@@ -39,7 +38,7 @@ struct Fd1dPde {
 //
 class Fd1d {
 public:
-    using CpuGrid = kw::Vector2d<f64, kColMajor | kCpu>;
+    using CpuGrid = kw::Grid2d;
 
 private:
     f64 m_theta;

@@ -1,4 +1,5 @@
 #include <numbers>
+#include <vector>
 
 #include "Core/kwTypes.h"
 #include "Math/kwMath.h"

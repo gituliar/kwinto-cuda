@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Core/kwCore.h"
+#include "Core/kwTypes.h"
 
 #include <concepts>
 #include <map>
-#include <string>
 
 
 namespace kw {

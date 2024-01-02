@@ -1,20 +1,10 @@
 ﻿#pragma once
 
-#include <cmath>
-//#include <vector>
-
-#include "Core/kwCore.h"
-#include "Core/kwString.h"
+#include "Core/kwTypes.h"
 
 
 namespace kw
 {
-
-using std::isnan;
-
-constexpr f64
-    nan = std::numeric_limits<f64>::quiet_NaN();
-
 
 f64 cdfNormal(f64 x);
 

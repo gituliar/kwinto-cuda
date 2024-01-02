@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Core/kwCore.h"
+#include "Core/kwTypes.h"
 
 #include <ostream>
-#include <string>
 #include <tuple>
 
 

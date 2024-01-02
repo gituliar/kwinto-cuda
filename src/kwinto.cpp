@@ -1,16 +1,18 @@
 #include <iostream>
+#include <vector>
 
 #include "docopt.h"
 
 #include "Core/kwConfig.h"
+#include "Core/kwString.h"
 #include "Pricer/kwPricerFactory.h"
 #include "Utils/kwPortfolio.h"
 #include "kwVersion.h"
 
+using namespace kw;
 
-namespace kw {
 
-constexpr char usage[] = R"(
+constexpr char g_usage[] = R"(
 kwinto - Options Pricing Analytics
 
 Usage:
@@ -29,8 +31,6 @@ Options:
     -h --help       Print this screen
     --version       Print Kwinto version
 )";
-
-}
 
 using Args = std::map<std::string, docopt::value>;
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 
 
     auto args = docopt::docopt(
-        kw::usage,
+        g_usage,
         { argv + 1, argv + argc },
         true,
         version);
