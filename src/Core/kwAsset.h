@@ -9,18 +9,16 @@
 namespace kw
 {
 
-enum class Parity { Call, Put };
-
 struct Option
 {
-    f64    t; //  time to maturity     1.0 = 365 days
-    f64    k; //  strike               100 = $100
-    f64    z; //  volatility           0.2 = 20% per year
-    f64    r; //  interest rate        0.05 = 5% per year
-    f64    q; //  dividend rate        0.03 = 3% per year
-    f64    s; //  spot price           100 = $100
-    bool   e; //  early exercise       true = American, false = European
-    Parity w; //  put or call
+    f64 t; /// time to maturity     1.0 = 365 days
+    f64 k; /// strike               100 = $100
+    f64 z; /// volatility           0.2 = 20% per year
+    f64 r; /// interest rate        0.05 = 5% per year
+    f64 q; /// dividend rate        0.03 = 3% per year
+    f64 s; /// spot price           100 = $100
+    u8  e; /// early exercise       0 = European, 1 = American
+    i8  w; /// parity               -1 = put, +1 = call
 
     friend bool operator<(const Option& l, const Option& r)
     {
@@ -32,13 +30,13 @@ struct Option
     {
         std::string res = "<Option";
 
-        res += e ? " e=true" : " e=false";
+        res += e ? " e=amer" : " e=euro";
         res += " k=" + std::to_string(k);
         res += " q=" + std::to_string(q);
         res += " r=" + std::to_string(r);
         res += " s=" + std::to_string(s);
         res += " t=" + std::to_string(t);
-        res += w == Parity::Call ? " w=Call" : " w=Put";
+        res += w > 0  ? " w=Call" : " w=Put";
         res += " z=" + std::to_string(z);
         res += ">";
 

@@ -38,7 +38,7 @@ BlackScholes_Pricer::priceOne(const Option& asset, f64& price) const
     const f64 s = asset.s;
     const f64 t = asset.t;
     const f64 z = asset.z;
-    const auto w = (asset.w == Parity::Put) ? -1 : 1;
+    const i8  w = asset.w;
 
     f64 zt = z * std::sqrt(t);
     f64 d1 = 1 / zt * (std::log(s / k) + (r - q + 0.5 * z * z) * t);

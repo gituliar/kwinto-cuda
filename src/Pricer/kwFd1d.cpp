@@ -6,114 +6,107 @@ using namespace kw;
 Error
 Fd1d_Pricer::init(const Config& config)
 {
-    const auto tDim = config.get("FD1D.T_GRID_SIZE", 512);
-    const auto xDim = config.get("FD1D.X_GRID_SIZE", 512);
-
-    if (auto error = m_solver.init(tDim, xDim); !error.empty())
-        return "Fd1d_Pricer::init: " + error;
+    m_tDim = config.get("FD1D.T_GRID_SIZE", 512);
+    m_xDim = config.get("FD1D.X_GRID_SIZE", 512);
 
     return "";
 }
 
 Error
-Fd1d_Pricer::price(const std::vector<Option>& assets, std::vector<double>& prices)
+Fd1d_Pricer::price(const vector<Option>& assets, vector<f64>& prices)
 {
+    /// TODO: Compress options with from the same chain
+
+    /// Allocate working memory
+    ///
     const auto n = assets.size();
+
+    m_t.resize(n, m_tDim);
+    m_x.resize(n, m_xDim);
+    m_v.resize(n, m_xDim);
+
+    vector<Fd1dPde> pdes;
+    pdes.reserve(n);
+
+    /// Fill PDE coefficients
+    ///
+    for (const auto& asset : assets) {
+        auto& pde = pdes.emplace_back();
+
+        pde.t = asset.t;
+
+        pde.a0 = -asset.r;
+        pde.ax = asset.r - asset.q - asset.z * asset.z / 2;
+        pde.axx = asset.z * asset.z / 2;
+        
+        pde.earlyExercise = asset.e;
+    }
+
+    /// Fill t-grid
+    ///
+    for (auto i = 0; i < pdes.size(); ++i) {
+        f64 tMin = 0.0, tMax = pdes[i].t;
+        f64 dt = (tMax - tMin) / (m_tDim - 1);
+
+        for (auto j = 0; j < m_tDim; ++j)
+            m_t(i, j) = tMin + j * dt;
+    }
+
+    /// Fill x-grid
+    /// 
+    /// https://github.com/lballabio/QuantLib/blob/master/ql/methods/finitedifferences/meshers/fdmblackscholesmesher.cpp
+    /// https://github.com/lballabio/QuantLib/blob/master/ql/pricingengines/vanilla/fdblackscholesvanillaengine.cpp
+    /// 
+    for (auto i = 0; i < assets.size(); ++i) {
+        const auto& asset = assets[i];
+
+        const f64 density = 0.5;
+        const f64 scale = 50;
+
+        const f64 xMid = 0.; // log(asset.s / asset.k);
+        const f64 xMin = xMid - scale * asset.z * sqrt(asset.t);
+        const f64 xMax = xMid + scale * asset.z * sqrt(asset.t);
+
+        const f64 yMin = asinh((xMin - xMid) / density);
+        const f64 yMax = asinh((xMax - xMid) / density);
+
+        const f64 dy = 1. / (m_xDim - 1);
+        for (auto j = 0; j < m_xDim; ++j) {
+            const f64 yj = j * dy;
+            m_x(i, j) = xMid + density * sinh(yMin * (1.0 - yj) + yMax * yj);
+        }
+    }
+
+    /// Fill v-grid
+    ///
+    for (auto i = 0; i < assets.size(); ++i) {
+        for (auto j = 0; j < m_xDim; ++j) {
+            if (assets[i].w < 0)
+                /// put
+                m_v(i,j) = std::max<f64>(0, 1. - exp(m_x(i,j)));
+            else
+                /// call
+                m_v(i,j) = std::max<f64>(0, exp(m_x(i,j)) - 1.);
+        }
+    }
+
+    /// Solve
+    ///
+    if (auto error = m_solver.solve(pdes, m_t, m_x, m_v); !error.empty())
+        return "Fd1d_Pricer::price: " + error;
+
+    /// Fill prices
+    ///
     prices.resize(n);
-
-    m_tGrid.resize(n, m_solver.tDim());
-    m_xGrid.resize(n, m_solver.xDim());
-    m_vGrid.resize(n, m_solver.xDim());
-
-    if (auto error = initBatch(assets, m_batch, m_tGrid, m_xGrid, m_vGrid); !error.empty())
-        return "Fd1d_Pricer::price: " + error;
-
-    if (auto error = m_solver.solve(m_batch, m_tGrid, m_xGrid, m_vGrid); !error.empty())
-        return "Fd1d_Pricer::price: " + error;
-
-
     for (auto i = 0; i < n; i++) {
+        const auto& asset = assets[i];
+
         f64 price_;
-        if (auto error = m_solver.value(i, assets[i].s, m_xGrid, price_); !error.empty())
-            return "Fd1d_Pricer::price " + error;
-        prices[i] = price_;
+        auto x = log(asset.s / asset.k);
+        if (auto err = m_solver.value(i, x, m_x, price_); !err.empty())
+            return "Fd1d_Pricer::price " + err;
+        prices[i] = asset.k * price_;
     }
 
     return "";
 }
-
-Error
-Fd1d_Pricer::initBatch(
-        const std::vector<Option>& assets,
-        std::vector<Fd1dPde>& batch,
-        Fd1d::CpuGrid& tGrid,
-        Fd1d::CpuGrid& xGrid,
-        Fd1d::CpuGrid& vGrid)
-{
-    batch.clear();
-    batch.reserve(assets.size());
-
-    for (const auto& a : assets)
-    {
-        auto& pde = batch.emplace_back();
-
-        pde.t = a.t;
-
-        pde.a0 = -a.r;
-        pde.ax = a.r - a.q - a.z * a.z / 2;
-        pde.axx = a.z * a.z / 2;
-        
-        pde.earlyExercise = a.e;
-    }
-
-    const auto tDim = tGrid.rows();
-    const auto xDim = xGrid.rows();
-
-    // Init T-Grid
-    for (auto i = 0; i < batch.size(); ++i) {
-        f64 tMin = 0.0, tMax = batch[i].t;
-        f64 dt = (tMax - tMin) / (tDim - 1);
-
-        for (auto j = 0; j < tDim; ++j)
-            tGrid(i, j) = tMin + j * dt;
-    }
-
-    // Init X-Grid
-    // 
-    // https://github.com/lballabio/QuantLib/blob/master/ql/methods/finitedifferences/meshers/fdmblackscholesmesher.cpp
-    // https://github.com/lballabio/QuantLib/blob/master/ql/pricingengines/vanilla/fdblackscholesvanillaengine.cpp
-    // 
-    for (auto i = 0; i < assets.size(); ++i) {
-        const auto& asset = assets[i];
-
-        const f64 density = 0.1;
-        const f64 scale = 10;
-
-        const f64 xMid = std::log(asset.s);
-        const f64 xMin = xMid - scale * asset.z * std::sqrt(asset.t);
-        const f64 xMax = xMid + scale * asset.z * std::sqrt(asset.t);
-
-        const f64 yMin = std::asinh((xMin - xMid) / density);
-        const f64 yMax = std::asinh((xMax - xMid) / density);
-
-        const f64 dy = 1. / (xDim - 1);
-        for (auto j = 0; j < xDim; ++j) {
-            const f64 yj = j * dy;
-            xGrid(i, j) = xMid + density * std::sinh(yMin * (1.0 - yj) + yMax * yj);
-        }
-    }
-
-    // Init V-Grid
-    for (auto i = 0; i < assets.size(); ++i) {
-        const auto& asset = assets[i];
-        for (auto j = 0; j < xDim; ++j) {
-            const auto& xj = xGrid(i, j);
-            if (asset.w == Parity::Put)
-                vGrid(i,j) = std::max<f64>(0, asset.k - std::exp(xj));
-            else
-                vGrid(i,j) = std::max<f64>(0, std::exp(xj) - asset.k);
-        }
-    }
-
-    return "";
-};

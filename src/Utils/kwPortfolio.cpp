@@ -68,8 +68,8 @@ Portfolio::load(const std::string& srcPath_)
         kw::fromString(vals[t], asset.t);
         kw::fromString(vals[s], asset.s);
         kw::fromString(vals[z], asset.z);
-        asset.e = vals[e] == "a";
-        asset.w = vals[w] == "c" ? kw::Parity::Call : kw::Parity::Put;
+        asset.e = vals[e] == "a" ? 1 : 0;
+        asset.w = vals[w] == "c" ? +1 : -1;
 
         m_assets.push_back(asset);
 

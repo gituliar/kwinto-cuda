@@ -2,6 +2,11 @@
 
 #include "Core/kwTypes.h"
 
+using std::asinh;
+using std::exp;
+using std::log;
+using std::sinh;
+using std::sqrt;
 
 namespace kw
 {

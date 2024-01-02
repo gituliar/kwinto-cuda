@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <vector>
-
 #include "Core/kwAsset.h"
 #include "Core/kwConfig.h"
 #include "Core/kwGrid2d.h"
@@ -10,10 +8,10 @@
 namespace kw
 {
 
-// Container for a 1D PDE.
-//
-// It should be possible to make coefficients time-dependent (but kept cont for now).
-//
+/// Partial-Differential Equation with _constant_ coefficients.
+///
+///     𝒟t V + 𝒜 V = 0,    where    𝒜 = a0 + ax 𝒟x + axx 𝒟xx
+///
 struct Fd1dPde {
     f64 t;
 
@@ -24,72 +22,38 @@ struct Fd1dPde {
     bool earlyExercise;
 };
 
-//  1D PDE:
-//
-//      0 = 𝒟t V + 𝒜 V
-//
-//      𝒜 = a0 + ax 𝒟x + axx 𝒟xx
-//
-//      𝒜 = -r + (r - z²/2) 𝒟x + z²/2 𝒟xx
-//
-//  Finite-difference solver for a 1D PDE based on the theta scheme:
-//
-//      [1 - θ dt 𝒜] V(t) = [1 + (1 - θ) dt 𝒜] V(t+dt)
-//
+/// Finite-Difference solver for a 1D PDE based on the Crank-Nicolson scheme:
+///
+///     [1 - θ dt 𝒜] V(t) = [1 + (1 - θ) dt 𝒜] V(t+dt)
+///
 class Fd1d {
-public:
-    using CpuGrid = kw::Grid2d;
-
 private:
-    f64 m_theta;
+    f64 m_theta = 0.5;
 
-    u64 m_tDim;
-    u64 m_xDim;
+    /// Equations to solve <n × tDim>
+    ///
+    Grid2d m_a0;
+    Grid2d m_ax;
+    Grid2d m_axx;
 
-    // pde coefficients
-    // t-grid <n × tDim>
-    CpuGrid m_a0;
-    CpuGrid m_ax;
-    CpuGrid m_axx;
+    /// Tridiagonal systems <n × xDim>
+    ///
+    Grid2d m_bl;
+    Grid2d m_b;
+    Grid2d m_bu;
 
-    // x-grid <n × xDim>
-    CpuGrid m_bl;
-    CpuGrid m_b;
-    CpuGrid m_bu;
-
-    CpuGrid m_w;
-    CpuGrid m_v;
+    Grid2d m_w;
+    Grid2d m_v;
 
 public:
-    const u64&
-        tDim() const { return m_tDim; }
-    const u64&
-        xDim() const { return m_xDim; }
-
     Error
-        init(u64 tDim, u64 xDim);
-
+        solve(const vector<Fd1dPde>& pdes, const Grid2d& t, const Grid2d& x, const Grid2d& v);
     Error
-        solve(
-            const std::vector<Fd1dPde>& batch,
-            const CpuGrid& tGrid,
-            const CpuGrid& xGrid,
-            const CpuGrid& vGrid);
-    Error
-        value(
-            const u64 i,
-            const f64 s,
-            const CpuGrid& xGrid,
-            f64& v) const;
+        value(const u64 i, const f64 s, const Grid2d& x, f64& v) const;
 
 private:
     Error
-        solveOne(
-            const u64 ni,
-            const bool earlyExercise,
-            const CpuGrid& tGrid,
-            const CpuGrid& xGrid,
-            const CpuGrid& vGrid);
+        solveOne(const u64 ni, const bool earlyExercise, const Grid2d& t, const Grid2d& x, const Grid2d& v);
 };
 
 

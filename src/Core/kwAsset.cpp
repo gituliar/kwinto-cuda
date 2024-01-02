@@ -4,5 +4,5 @@ std::ostream&
 kw::operator<<(std::ostream& os, const kw::Option& o)
 {
     return os << "<Option s=" << o.s << " t=" << o.t << ", k=" << o.k << ", z=" << o.z << ", r=" << o.r << ", q=" << o.q
-        << ", " << (o.e ? "amer" : "euro") << ", " << (o.w == kw::Parity::Call ? "call" : "put") << ">";
+        << ", " << (o.e ? "amer" : "euro") << ", " << (o.w > 0 ? "call" : "put") << ">";
 }

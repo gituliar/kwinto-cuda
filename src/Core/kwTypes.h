@@ -3,6 +3,10 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <vector>
+
+using std::string;
+using std::vector;
 
 
 namespace kw

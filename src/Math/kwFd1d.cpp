@@ -9,91 +9,71 @@ using namespace kw;
 
 
 Error
-Fd1d::init(u64 tDim, u64 xDim)
+Fd1d::solve(const vector<Fd1dPde>& pdes, const Grid2d& t, const Grid2d& x, const Grid2d& v)
 {
-    m_theta = 0.5;
+    auto n = pdes.size();
 
-    m_tDim = tDim;
-    m_xDim = xDim;
+    auto tDim = t.rows();
+    auto xDim = x.rows();
 
-    return "";
-};
+    m_bl.resize(n, xDim);
+    m_b.resize(n, xDim);
+    m_bu.resize(n, xDim);
+    m_v.resize(n, xDim);
+    m_w.resize(n, xDim);
 
+    m_a0.resize(n, tDim);
+    m_ax.resize(n, tDim);
+    m_axx.resize(n, tDim);
 
-Error
-Fd1d::solve(
-    const std::vector<Fd1dPde>& batch,
-    const CpuGrid& tGrid,
-    const CpuGrid& xGrid,
-    const CpuGrid& vGrid)
-{
-    // 1. Reserve memory
-    const auto n = batch.size();
-    m_bl.resize(n, m_xDim);
-    m_b.resize(n, m_xDim);
-    m_bu.resize(n, m_xDim);
-    m_v.resize(n, m_xDim);
-    m_w.resize(n, m_xDim);
-
-    m_a0.resize(n, m_tDim);
-    m_ax.resize(n, m_tDim);
-    m_axx.resize(n, m_tDim);
-
-    // 1. Init T-Grid with PDE coefficients
-    for (auto bi = 0; bi < batch.size(); ++bi) {
-        const auto& pde = batch[bi];
-
-        for (auto ti = 0; ti < tGrid.rows(); ++ti) {
-            m_a0(bi, ti) = pde.a0;
-            m_ax(bi, ti) = pde.ax;
-            m_axx(bi, ti) = pde.axx;
+    for (auto i = 0; i < pdes.size(); i++) {
+        /// Fill PDE coefficients
+        ///
+        for (auto ti = 0; ti < t.rows(); ++ti) {
+            m_a0(i, ti) = pdes[i].a0;
+            m_ax(i, ti) = pdes[i].ax;
+            m_axx(i, ti) = pdes[i].axx;
         }
+
+        /// Fill boundary conditions
+        ///
+        for (auto xi = 0; xi < v.rows(); ++xi)
+            m_v(i, xi) = v(i, xi);
     }
 
-    // 2. Init X-Grid with Boundary Conditions
-    for (auto bi = 0; bi < batch.size(); ++bi) {
-        for (auto xi = 0; xi < vGrid.rows(); ++xi)
-            m_v(bi, xi) = vGrid(bi, xi);
-    }
 
-    auto priceJob = [&](u64 i) {
-        std::cout << i << std::endl;
-    };
-
-    auto solveJob = [&](u64 i) {
-        if (auto error = solveOne(i, batch[i].earlyExercise, tGrid, xGrid, vGrid); !error.empty()) {
-            std::cerr << "Fd1d<Real>::solve: " + error << std::endl;
+    auto solveJob = [&](u32 i) {
+        if (auto error = solveOne(i, pdes[i].earlyExercise, t, x, v); !error.empty()) {
+            std::cerr << "Fd1d::solve: " + error << std::endl;
         }
     };
+
     auto& pool = kw::ThreadPool::instance();
-    for (auto bi = 0; bi < batch.size(); ++bi) {
-        pool.add_job(std::bind(solveJob, bi));
+    for (auto i = 0; i < pdes.size(); i++) {
+        pool.add_job(std::bind(solveJob, i));
     }
     pool.wait();
 
     return "";
 }
 
+
 Error
-Fd1d::solveOne(
-    const u64 ni,
-    const bool earlyExercise,
-    const CpuGrid& tGrid,
-    const CpuGrid& xGrid,
-    const CpuGrid& vGrid)
+Fd1d::solveOne(const u64 ni, const bool earlyExercise, const Grid2d& t, const Grid2d& x, const Grid2d& v)
 {
-    for (int ti = m_tDim - 2; ti >= 0; --ti) {
+    auto tDim = t.rows();
+    auto xDim = x.rows();
+
+    for (int ti = tDim - 2; ti >= 0; --ti) {
         // Step 1
         //   - Calc B = [1 - θ dt 𝒜]
         //   - Calc W = [1 + (1 - θ) dt 𝒜] V(t + dt)
 
-        f64 dt = tGrid(ni, ti + 1) - tGrid(ni, ti);
+        f64 dt = t(ni, ti + 1) - t(ni, ti);
         {
             const auto xi = 0;
-            //const auto i = ni + xi * n;
-            //const auto j = ni + ti * n;
 
-            const f64 inv_dx = 1. / (xGrid(ni, xi + 1) - xGrid(ni, xi));
+            const f64 inv_dx = 1. / (x(ni, xi + 1) - x(ni, xi));
 
             m_bl(ni, xi) = 0;
             m_b(ni, xi) = 1 - m_theta * dt * (m_a0(ni, ti) - inv_dx * m_ax(ni, ti));
@@ -103,10 +83,10 @@ Fd1d::solveOne(
                 (1 - m_theta) * dt * (m_ax(ni, ti) * inv_dx) * (m_v(ni, xi + 1) - m_v(ni, xi));
         }
 
-        for (auto xi = 1; xi < m_xDim - 1; ++xi) {
-            const f64 inv_dxu = 1. / (xGrid(ni, xi + 1) - xGrid(ni, xi));
-            const f64 inv_dxm = 1. / (xGrid(ni, xi + 1) - xGrid(ni, xi - 1));
-            const f64 inv_dxd = 1. / (xGrid(ni, xi) - xGrid(ni, xi - 1));
+        for (auto xi = 1; xi < xDim - 1; ++xi) {
+            const f64 inv_dxu = 1. / (x(ni, xi + 1) - x(ni, xi));
+            const f64 inv_dxm = 1. / (x(ni, xi + 1) - x(ni, xi - 1));
+            const f64 inv_dxd = 1. / (x(ni, xi) - x(ni, xi - 1));
 
             const f64 inv_dx2u = 2. * inv_dxu * inv_dxm;
             const f64 inv_dx2m = 2. * inv_dxd * inv_dxu;
@@ -122,21 +102,21 @@ Fd1d::solveOne(
         }
 
         {
-            const auto xi = m_xDim - 1;
-            const f64 inv_dx = 1. / (xGrid(ni, xi) - xGrid(ni, xi - 1));
+            const auto xi = xDim - 1;
+            const f64 inv_dx = 1. / (x(ni, xi) - x(ni, xi - 1));
 
-            m_bl(ni, m_xDim - 1) = -m_theta * dt * (-inv_dx * m_ax(ni, ti));
-            m_b(ni, m_xDim - 1) = 1 - m_theta * dt * (m_a0(ni, ti) + inv_dx * m_ax(ni, ti));
-            m_bu(ni, m_xDim - 1) = 0;
+            m_bl(ni, xDim - 1) = -m_theta * dt * (-inv_dx * m_ax(ni, ti));
+            m_b(ni, xDim - 1) = 1 - m_theta * dt * (m_a0(ni, ti) + inv_dx * m_ax(ni, ti));
+            m_bu(ni, xDim - 1) = 0;
 
-            m_w(ni, m_xDim - 1) = (1 + (1 - m_theta) * dt * m_a0(ni, ti)) * m_v(ni, xi) +
+            m_w(ni, xDim - 1) = (1 + (1 - m_theta) * dt * m_a0(ni, ti)) * m_v(ni, xi) +
                 (1 - m_theta) * dt * (m_ax(ni, ti) * inv_dx) * (m_v(ni, xi) - m_v(ni, xi - 1));
         }
 
         // Step 2
         //   - Solve B V = W
         solveTridiagonal(
-            static_cast<int>(m_xDim),
+            static_cast<int>(xDim),
             &m_bl(ni, 0),
             &m_b(ni, 0),
             &m_bu(ni, 0),
@@ -147,8 +127,8 @@ Fd1d::solveOne(
         // Step 3
         //  - Adjust for early exercise
         if (earlyExercise) {
-            for (auto xi = 0; xi < m_xDim - 1; ++xi)
-                m_v(ni, xi) = std::max(m_v(ni, xi), vGrid(ni, xi));
+            for (auto xi = 0; xi < xDim - 1; ++xi)
+                m_v(ni, xi) = std::max(m_v(ni, xi), v(ni, xi));
         }
     }
 
@@ -157,32 +137,22 @@ Fd1d::solveOne(
 
 
 Error
-Fd1d::value(
-    const u64 ni,
-    const f64 s,
-    const CpuGrid& xGrid,
-    f64& v) const
+Fd1d::value(const u64 ni, const f64 x_, const Grid2d& x, f64& v) const
 {
-    f64 x = std::log(s);
+    const auto xDim = x.rows();
 
-    const auto n = xGrid.cols();
-    const auto xDim = xGrid.rows();
-
-    if (ni >= n)
+    if (ni >= x.cols())
         return "Fd1d::value: Solution index out of range";
 
     u64 xi = 0;
-    while ((xi < xDim) && (xGrid(ni, xi) < x))
+    while ((xi < xDim) && (x(ni, xi) < x_))
         ++xi;
 
-    if ((xi == 0) || (xi == xDim)) {
-        const auto sMin = std::exp(xGrid(ni, 0));
-        const auto sMax = std::exp(xGrid(ni, xDim - 1));
-        return "Fd1d::value: Spot " + std::to_string(s) + " not in range (" + std::to_string(sMin)
-            + ", " + std::to_string(sMax) + ")";
-    }
+    if ((xi == 0) || (xi == xDim))
+        return "Fd1d::value: x=" + std::to_string(x_) + " not in range (" + std::to_string(x(ni, 0))
+            + ", " + std::to_string(x(ni, xDim - 1)) + ")";
 
-    v = ((xGrid(ni, xi) - x) * m_v(ni, xi - 1) + (x - xGrid(ni, xi - 1)) * m_v(ni, xi)) / (xGrid(ni, xi) - xGrid(ni, xi - 1));
+    v = ((x(ni, xi) - x_) * m_v(ni, xi - 1) + (x_ - x(ni, xi - 1)) * m_v(ni, xi)) / (x(ni, xi) - x(ni, xi - 1));
 
     return "";
 }

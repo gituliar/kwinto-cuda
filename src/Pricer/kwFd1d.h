@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Pricer/kwPricer.h"
 
@@ -9,37 +9,29 @@
 namespace kw
 {
 
+///
+///      𝒜 = -r + (r - z²/2) 𝒟x + z²/2 𝒟xx
 class Fd1d_Pricer : public Pricer
 {
 private:
-    std::vector<Fd1dPde>
-        m_batch;
+    u64 m_tDim;
+    u64 m_xDim;
 
     Fd1d
         m_solver;
 
-    Fd1d::CpuGrid
-        m_tGrid;
-    Fd1d::CpuGrid
-        m_vGrid; // Initial value condition (final payoff)
-    Fd1d::CpuGrid
-        m_xGrid;
+    Grid2d
+        m_t;
+    Grid2d
+        m_v; // Initial value condition (final payoff)
+    Grid2d
+        m_x;
 
 public:
     Error
         init(const Config& config) final;
-
     Error
-        price(const std::vector<Option>& assets, std::vector<f64>& prices) final;
-
-public:
-    static Error
-        initBatch(
-            const std::vector<Option>& assets,
-            std::vector<Fd1dPde>& batch,
-            Fd1d::CpuGrid& tGrid,
-            Fd1d::CpuGrid& xGrid,
-            Fd1d::CpuGrid& vGrid);
+        price(const vector<Option>& assets, vector<f64>& prices) final;
 };
 
 }

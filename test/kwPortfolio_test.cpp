@@ -40,7 +40,6 @@ TEST_F(kwPortfolioTest, Fd1d)
 
     kw::Config config;
     config.set("PRICER", "FD1D");
-    config.set("FD1D.THETA", 0.5);
     config.set("FD1D.T_GRID_SIZE", 512);
     config.set("FD1D.X_GRID_SIZE", 512);
 
