@@ -1,5 +1,8 @@
 #include "Pricer/kwFd1d.h"
 
+#include <algorithm>
+#include <tuple>
+
 using namespace kw;
 
 
@@ -15,36 +18,80 @@ Fd1d_Pricer::init(const Config& config)
 Error
 Fd1d_Pricer::price(const vector<Option>& assets, vector<f64>& prices)
 {
-    /// TODO: Compress options with from the same chain
-
-    /// Allocate working memory
-    ///
     const auto n = assets.size();
+    if (n == 0)
+        return "";
 
-    m_t.resize(n, m_tDim);
-    m_x.resize(n, m_xDim);
-    m_v.resize(n, m_xDim);
+    /// Compression (allows to solve one PDE per options chain)
+    ///
+    vector<u32> asset2pde;
+    vector<u32> pde2asset;
+    {
+        auto assetLess = [](const Option& l, const Option& r) -> bool {
+            return std::tie(l.t, l.r, l.q, l.z, l.e, l.w) < std::tie(r.t, r.r, r.q, r.z, r.e, r.w);
+        };
+
+        auto assetEqual = [&assetLess](const Option& l, const Option& r) -> bool {
+            return assetLess(l, r) == assetLess(r, l);
+        };
+
+        vector<u32> assetsSorted;
+        assetsSorted.reserve(assets.size());
+        for (auto i = 0; i < assets.size(); i++)
+            assetsSorted.push_back(i);
+
+        std::sort(assetsSorted.begin(), assetsSorted.end(), [&assets, &assetLess](const u32& l, const u32& r) {
+            return assetLess(assets[l], assets[r]);
+        });
+
+
+        asset2pde.resize(assets.size());
+        asset2pde[assetsSorted[0]] = 0;
+        pde2asset.push_back(assetsSorted[0]);
+        for (auto i = 1, k = 0; i < assetsSorted.size(); i++) {
+            auto l = assetsSorted[i-1];
+            auto r = assetsSorted[i];
+
+            if (!assetEqual(assets[l], assets[r])) {
+                k += 1;
+                pde2asset.push_back(r);
+            }
+
+            asset2pde[r] = k;
+        }
+    }
+
 
     vector<Fd1dPde> pdes;
-    pdes.reserve(n);
+    const auto m = pde2asset.size();
 
     /// Fill PDE coefficients
     ///
-    for (const auto& asset : assets) {
+    pdes.reserve(m);
+    for (const auto& i : pde2asset) {
         auto& pde = pdes.emplace_back();
+
+        const auto& asset = assets[i];
 
         pde.t = asset.t;
 
         pde.a0 = -asset.r;
         pde.ax = asset.r - asset.q - asset.z * asset.z / 2;
         pde.axx = asset.z * asset.z / 2;
-        
+
         pde.earlyExercise = asset.e;
     }
 
+
+    /// Allocate working memory
+    ///
+    m_t.resize(m, m_tDim);
+    m_x.resize(m, m_xDim);
+    m_v.resize(m, m_xDim);
+
     /// Fill t-grid
     ///
-    for (auto i = 0; i < pdes.size(); ++i) {
+    for (auto i = 0; i < m; ++i) {
         f64 tMin = 0.0, tMax = pdes[i].t;
         f64 dt = (tMax - tMin) / (m_tDim - 1);
 
@@ -57,8 +104,8 @@ Fd1d_Pricer::price(const vector<Option>& assets, vector<f64>& prices)
     /// https://github.com/lballabio/QuantLib/blob/master/ql/methods/finitedifferences/meshers/fdmblackscholesmesher.cpp
     /// https://github.com/lballabio/QuantLib/blob/master/ql/pricingengines/vanilla/fdblackscholesvanillaengine.cpp
     /// 
-    for (auto i = 0; i < assets.size(); ++i) {
-        const auto& asset = assets[i];
+    for (auto i = 0; i < m; ++i) {
+        const auto& asset = assets[pde2asset[i]];
 
         const f64 density = 0.5;
         const f64 scale = 50;
@@ -79,9 +126,10 @@ Fd1d_Pricer::price(const vector<Option>& assets, vector<f64>& prices)
 
     /// Fill v-grid
     ///
-    for (auto i = 0; i < assets.size(); ++i) {
+    for (auto i = 0; i < m; ++i) {
+        const auto& asset = assets[pde2asset[i]];
         for (auto j = 0; j < m_xDim; ++j) {
-            if (assets[i].w < 0)
+            if (asset.w < 0)
                 /// put
                 m_v(i,j) = std::max<f64>(0, 1. - exp(m_x(i,j)));
             else
@@ -103,7 +151,7 @@ Fd1d_Pricer::price(const vector<Option>& assets, vector<f64>& prices)
 
         f64 price_;
         auto x = log(asset.s / asset.k);
-        if (auto err = m_solver.value(i, x, m_x, price_); !err.empty())
+        if (auto err = m_solver.value(asset2pde[i], x, m_x, price_); !err.empty())
             return "Fd1d_Pricer::price " + err;
         prices[i] = asset.k * price_;
     }
