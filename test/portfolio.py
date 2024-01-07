@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from   itertools import product
+import sys
 
 import QuantLib as ql
 
@@ -97,7 +98,8 @@ def generate(fo, portfolio):
     #fo.write('expiry,spot,strike,volatility,interest_rate,dividend_rate,parity,exercise,price,delta,gamma,vega,theta,rgo\n')
     for option in product(t, s, k, z, r, q, w, e):
         t, s, k, z, r, q, w, e = option
-        price_ = to_string(price(*option))
+        price_ = price(*option)
+        #price_ = to_string(price(*option))
         #delta_ = to_string(delta(**kwargs))
         #gamma_ = to_string(gamma(**kwargs))
         #rho_ = to_string(rho(**kwargs))
@@ -111,6 +113,10 @@ def generate(fo, portfolio):
         fo.write(line)
 
 if __name__ == '__main__':
-    mode = 'fd1d'
+    if len(sys.argv) != 2:
+        print("portfolio.py <mode>")
+        exit()
+
+    mode = sys.argv[1]
     with open(f'portfolio_{mode}.csv', 'w') as fo:
         generate(fo, mode)
