@@ -20,12 +20,12 @@ protected:
             {{1.0, 100., 0.2, 0.06, 0.02, 100., 0, +1}, 9.729},
             {{1.0, 100., 0.2, 0.06, 0.02, 110., 0, +1}, 16.633},
 
-            {{1.0, 100., 0.2, 0.06, 0.08,  90., 1, -1}, 13.988},
-            {{1.0, 100., 0.2, 0.06, 0.08, 100., 1, -1}, 8.409},
-            {{1.0, 100., 0.2, 0.06, 0.08, 110., 1, -1}, 4.659},
-            {{1.0, 100., 0.2, 0.06, 0.08,  90., 1, +1}, 2.947},
-            {{1.0, 100., 0.2, 0.06, 0.08, 100., 1, +1}, 6.842},
-            {{1.0, 100., 0.2, 0.06, 0.08, 110., 1, +1}, 12.794}
+            {{1.0, 100., 0.2, 0.06, 0.08,  90., 1, -1}, 13.988121682},
+            {{1.0, 100., 0.2, 0.06, 0.08, 100., 1, -1}, 8.409190396},
+            {{1.0, 100., 0.2, 0.06, 0.08, 110., 1, -1}, 4.6592955111},
+            {{1.0, 100., 0.2, 0.06, 0.08,  90., 1, +1}, 2.9472036256},
+            {{1.0, 100., 0.2, 0.06, 0.08, 100., 1, +1}, 6.8422540642},
+            {{1.0, 100., 0.2, 0.06, 0.08, 110., 1, +1}, 12.7940107108}
         };
     }
 
@@ -68,6 +68,30 @@ TEST_F(kwPricerTest, Fd1d)
 
     kw::Config config;
     config.set("PRICER", "FD1D");
+
+    kw::sPtr<kw::Pricer> pricer;
+    ASSERT_EQ(kw::PricerFactory::create(config, pricer), "");
+
+    std::vector<f64> prices;
+    ASSERT_EQ(pricer->price(assets, prices), "");
+
+    for (auto i = 0; i < m_testData.size(); ++i) {
+        const auto& want = m_testData[i].second;
+        const auto& got = prices[i];
+
+        EXPECT_NEAR(want, got, 1.3e-3);
+    }
+}
+
+
+TEST_F(kwPricerTest, Fd1dBlackScholes)
+{
+    std::vector<Option> assets;
+    for (const auto& test : m_testData)
+        assets.push_back(test.first);
+
+    kw::Config config;
+    config.set("PRICER", "FD1D-BS");
 
     kw::sPtr<kw::Pricer> pricer;
     ASSERT_EQ(kw::PricerFactory::create(config, pricer), "");

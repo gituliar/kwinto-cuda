@@ -91,14 +91,14 @@ def generate(fo, portfolio):
         z = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
 
     def to_string(x):
-        x_ = round(x, 6) + 0
-        return f'{x_:.6f}'.rstrip('0')
+        x_ = round(x, 12) + 0
+        return f'{x_:.12f}'.rstrip('0')
 
     fo.write('expiry,spot,strike,volatility,interest_rate,dividend_rate,parity,exercise,price\n')
     #fo.write('expiry,spot,strike,volatility,interest_rate,dividend_rate,parity,exercise,price,delta,gamma,vega,theta,rgo\n')
     for option in product(t, s, k, z, r, q, w, e):
         t, s, k, z, r, q, w, e = option
-        price_ = price(*option)
+        price_ = to_string(price(*option))
         #price_ = to_string(price(*option))
         #delta_ = to_string(delta(**kwargs))
         #gamma_ = to_string(gamma(**kwargs))

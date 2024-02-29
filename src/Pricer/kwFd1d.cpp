@@ -9,6 +9,9 @@ using namespace kw;
 Error
 Fd1d_Pricer::init(const Config& config)
 {
+    m_density = config.get("FD1D.DENSITY", 0.25);
+    m_scale = config.get("FD1D.SCALE", 50.);
+
     m_tDim = config.get("FD1D.T_GRID_SIZE", 512);
     m_xDim = config.get("FD1D.X_GRID_SIZE", 512);
 
@@ -107,20 +110,17 @@ Fd1d_Pricer::price(const vector<Option>& assets, vector<f64>& prices)
     for (auto i = 0; i < m; ++i) {
         const auto& asset = assets[pde2asset[i]];
 
-        const f64 density = 0.5;
-        const f64 scale = 50;
-
         const f64 xMid = 0.; // log(asset.s / asset.k);
-        const f64 xMin = xMid - scale * asset.z * sqrt(asset.t);
-        const f64 xMax = xMid + scale * asset.z * sqrt(asset.t);
+        const f64 xMin = xMid - m_scale * asset.z * sqrt(asset.t);
+        const f64 xMax = xMid + m_scale * asset.z * sqrt(asset.t);
 
-        const f64 yMin = asinh((xMin - xMid) / density);
-        const f64 yMax = asinh((xMax - xMid) / density);
+        const f64 yMin = asinh((xMin - xMid) / m_density);
+        const f64 yMax = asinh((xMax - xMid) / m_density);
 
         const f64 dy = 1. / (m_xDim - 1);
         for (auto j = 0; j < m_xDim; ++j) {
             const f64 yj = j * dy;
-            m_x(i, j) = xMid + density * sinh(yMin * (1.0 - yj) + yMax * yj);
+            m_x(i, j) = xMid + m_density * sinh(yMin * (1.0 - yj) + yMax * yj);
         }
     }
 

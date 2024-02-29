@@ -22,8 +22,10 @@ Arguments:
     <path>          CSV file with options data
 
 Options:
+    --density <num> Density of the x-grid distribution [default: 0.25]
+    --scale <num>   Scale of the x-grid distribution [default: 50.0]
     -e <num>        Reject option prices less than <num> from RRMS error stats [default: 0.5]
-    -n <num>        Run <num> batches (when 0 run all) [default: 0]
+    -p <name>       Pricer name [default: FD1D-BS]
     -t <num>        Use <num> points for t-grid [default: 512]
     -x <num>        Use <num> points for x-grid [default: 512]
     -v              Show extra details, be verbose
@@ -41,13 +43,24 @@ kw::Error
 {
     kw::Config config;
 
-    config.set("PRICER", "FD1D");
+    config.set("PRICER", args.at("-p").asString());
+
+    f64 density;
+    if (auto error = kw::fromString(args.at("--density").asString(), density); !error.empty())
+        return "cmdBench: Fail to parse '--density <num>': " + error;
+    config.set("FD1D.DENSITY", density);
+
+    f64 scale;
+    if (auto error = kw::fromString(args.at("--scale").asString(), scale); !error.empty())
+        return "cmdBench: Fail to parse '--scale <num>': " + error;
+    config.set("FD1D.SCALE", scale);
+
     config.set("FD1D.T_GRID_SIZE", args.at("-t").asLong());
     config.set("FD1D.X_GRID_SIZE", args.at("-x").asLong());
 
-    double tolerance;
+    f64 tolerance;
     if (auto error = kw::fromString(args.at("-e").asString(), tolerance); !error.empty())
-        return "cmdBench: Fail to parse '-n <num>': " + error;
+        return "cmdBench: Fail to parse '-e <num>': " + error;
 
     /// Load Portfolio
     ///

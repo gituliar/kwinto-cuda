@@ -9,11 +9,13 @@
 namespace kw
 {
 
-///
 ///      𝒜 = -r + (r - z²/2) 𝒟x + z²/2 𝒟xx
+///
 class Fd1d_Pricer : public Pricer
 {
 private:
+    f64 m_density;
+    f64 m_scale;
     u64 m_tDim;
     u64 m_xDim;
 

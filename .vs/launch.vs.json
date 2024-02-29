@@ -17,7 +17,9 @@
       "currentDir": "${workspaceRoot}",
       "args": [
         "price",
-        "test/portfolio_42k.csv"
+        "--density 0.1",
+        "--scale 1",
+        "test/portfolio_qdfp.csv"
       ]
     }
   ]
