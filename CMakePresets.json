@@ -17,7 +17,6 @@
         "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": { "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}" }
       },
       "environment": {
-        "VCPKG_ROOT": "/home/sasha/src/vcpkg"
       }
     },
     {
@@ -36,7 +35,6 @@
         "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": { "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}" }
       },
       "environment": {
-        "VCPKG_ROOT": "/home/sasha/src/vcpkg"
       }
     },
     {
